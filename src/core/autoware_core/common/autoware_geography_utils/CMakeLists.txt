@@ -34,6 +34,24 @@ if(BUILD_TESTING)
   )
 endif()
 
+add_executable(project_control_points
+  src/project_control_points.cpp
+)
+
+ament_target_dependencies(project_control_points
+  geographic_msgs
+  autoware_map_msgs
+)
+
+target_link_libraries(project_control_points
+  ${PROJECT_NAME}
+)
+
+install(
+  TARGETS project_control_points
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 autoware_ament_auto_package(
   USE_SCOPED_HEADER_INSTALL_DIR
 )
