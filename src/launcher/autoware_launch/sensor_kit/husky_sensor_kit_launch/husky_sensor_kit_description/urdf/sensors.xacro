@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:arg name="config_dir" default="$(find husky_sensor_kit_description)/config"/>
+  <xacro:property name="calibration" value="${xacro.load_yaml('$(arg config_dir)/sensors_calibration.yaml')}"/>
+  <xacro:property name="wheel_center" value="${calibration['base_link']['husky_wheel_center']}"/>
+
+  <joint name="husky_wheel_center_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="husky_wheel_center"/>
+    <origin
+      xyz="${wheel_center['x']} ${wheel_center['y']} ${wheel_center['z']}"
+      rpy="${wheel_center['roll']} ${wheel_center['pitch']} ${wheel_center['yaw']}"
+    />
+  </joint>
+  <link name="husky_wheel_center"/>
+
+  <xacro:macro name="husky_sensor_frame" params="name">
+    <xacro:property name="pose" value="${calibration['husky_wheel_center'][name]}"/>
+    <joint name="${name}_joint" type="fixed">
+      <parent link="husky_wheel_center"/>
+      <child link="${name}"/>
+      <origin xyz="${pose['x']} ${pose['y']} ${pose['z']}" rpy="${pose['roll']} ${pose['pitch']} ${pose['yaw']}"/>
+    </joint>
+    <link name="${name}"/>
+  </xacro:macro>
+
+  <xacro:husky_sensor_frame name="velodyne"/>
+  <xacro:husky_sensor_frame name="FP_POI"/>
+  <xacro:husky_sensor_frame name="GNSS1"/>
+</robot>

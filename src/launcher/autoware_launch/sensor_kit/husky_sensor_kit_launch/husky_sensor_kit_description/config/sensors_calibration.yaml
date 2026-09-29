@@ -1,0 +1,36 @@
+# Supplied sensor offsets are measured from husky_wheel_center at wheel-axle
+# height, centered between front and rear wheels. Clearpath's base_link remains
+# at the bottom-plate center. Its installed A200 URDF places the wheel centers
+# 0.03282 m above base_link.
+# Translation is metres; RPY is radians.
+# FP_POI and FP_VRTK coincide in the current Fixposition configuration.
+base_link:
+  husky_wheel_center:
+    x: 0.0
+    y: 0.0
+    z: 0.03282
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
+husky_wheel_center:
+  velodyne:
+    x: 0.258
+    y: 0.0
+    z: 1.0727
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
+  FP_POI:
+    x: 0.060
+    y: 0.0
+    z: 0.225
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
+  GNSS1:
+    x: -0.301
+    y: 0.0
+    z: 0.526
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0

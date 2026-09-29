@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Control bridge is intentionally absent until vehicle commands and feedback are specified. -->
+  <arg name="vehicle_id" default="$(env VEHICLE_ID default)"/>
+  <arg name="raw_vehicle_cmd_converter_param_path" default=""/>
+  <arg name="initial_engage_state" default="false"/>
+</launch>

@@ -1,0 +1,20 @@
+# Supplied Husky measurements in metres. The survey frame is centered between
+# the wheel axles and at wheel-axle height. Clearpath's base_link remains at
+# the bottom-plate center; Autoware currently uses a rear-axle ground frame
+# for vehicle geometry. The equivalent steering angle below represents a
+# chosen 1.0 m forward-driving turn radius; it is not a physical steering
+# limit. Align the frame convention before using Husky geometry for planning.
+/**:
+  ros__parameters:
+    wheel_radius: 0.159
+    wheel_width: 0.108
+    wheel_base: 0.510
+    wheel_tread: 0.556
+    # Wheel-center-to-body-edge distances measured on this Husky.
+    front_overhang: 0.26
+    rear_overhang: 0.26
+    left_overhang: 0.054
+    right_overhang: 0.054
+    vehicle_height: 1.28
+    # atan(wheel_base / chosen_turn_radius) = atan(0.510 / 1.0).
+    max_steer_angle: 0.47161556786232767

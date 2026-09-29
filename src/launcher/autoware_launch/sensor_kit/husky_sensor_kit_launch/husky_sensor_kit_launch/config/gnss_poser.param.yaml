@@ -1,0 +1,9 @@
+/**:
+  ros__parameters:
+    base_frame: base_link
+    gnss_base_frame: GNSS1
+    map_frame: map
+    buff_epoch: 1
+    # Use GNSS motion for heading until Fixposition orientation is connected.
+    use_gnss_ins_orientation: false
+    gnss_pose_pub_method: 0

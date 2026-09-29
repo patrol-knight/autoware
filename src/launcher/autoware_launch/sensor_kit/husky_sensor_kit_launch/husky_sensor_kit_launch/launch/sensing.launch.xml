@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="launch_driver" default="false"/>
+  <arg name="launch_vehicle" default="false"/>
+  <arg name="publish_sensor_tf" default="true"/>
+  <arg name="vlp16_config_file" default="$(find-pkg-share husky_sensor_kit_launch)/config/VLP16.param.yaml"/>
+  <arg name="fixposition_config" default="config.yaml"/>
+  <arg name="launch_gnss_poser" default="false"/>
+  <arg name="vehicle_mirror_param_file" default=""/>
+  <arg name="pointcloud_container_name" default="pointcloud_container"/>
+
+  <group unless="$(var launch_vehicle)">
+    <group if="$(var publish_sensor_tf)">
+      <include file="$(find-pkg-share husky_sensor_kit_launch)/launch/sensor_tf.launch.py"/>
+    </group>
+  </group>
+
+  <!-- tier4_sensing_launch pushes /sensing; the hardware driver topics use
+       root names so the existing relays can subscribe to them. -->
+  <group if="$(var launch_driver)">
+    <push-ros-namespace namespace="/"/>
+    <include file="$(find-pkg-share nebula_velodyne)/launch/velodyne_launch_all_hw.xml">
+      <arg name="sensor_model" value="VLP16"/>
+      <arg name="config_file" value="$(var vlp16_config_file)"/>
+    </include>
+    <include file="$(find-pkg-share fixposition_driver_ros2)/launch/node.launch">
+      <arg name="config" value="$(var fixposition_config)"/>
+    </include>
+  </group>
+
+  <!-- Adapt the observed hardware topics to Autoware's sensing inputs. -->
+  <node pkg="husky_sensor_kit_launch" exec="pointcloud_bridge.py"
+        name="husky_pointcloud_bridge"/>
+  <include file="$(find-pkg-share husky_sensor_kit_launch)/launch/lidar_processing.launch.py"/>
+  <node pkg="husky_sensor_kit_launch" exec="corrimu_bridge.py"
+        name="fixposition_corrimu_bridge"/>
+  <node pkg="husky_sensor_kit_launch" exec="gnss_fix_bridge.py"
+        name="fixposition_gnss_fix_bridge"/>
+
+  <node pkg="husky_sensor_kit_launch" exec="odom_twist_bridge.py"
+        name="husky_odom_twist_bridge"/>
+
+  <group if="$(var launch_gnss_poser)">
+    <include file="$(find-pkg-share autoware_gnss_poser)/launch/gnss_poser.launch.xml">
+      <arg name="param_file" value="$(find-pkg-share husky_sensor_kit_launch)/config/gnss_poser.param.yaml"/>
+      <arg name="input_topic_fix" value="/sensing/gnss/fix"/>
+      <arg name="output_topic_gnss_pose" value="/sensing/gnss/pose"/>
+      <arg name="output_topic_gnss_pose_cov" value="/sensing/gnss/pose_with_covariance"/>
+      <arg name="output_topic_gnss_fixed" value="/sensing/gnss/fixed"/>
+    </include>
+  </group>
+</launch>

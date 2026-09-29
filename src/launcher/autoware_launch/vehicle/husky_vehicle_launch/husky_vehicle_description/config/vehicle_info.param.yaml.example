@@ -1,0 +1,14 @@
+# Copy to vehicle_info.param.yaml and replace every REPLACE_ME with a measured
+# value in metres. The wheel_base is an effective value for differential drive.
+/**:
+  ros__parameters:
+    wheel_radius: REPLACE_ME
+    wheel_width: REPLACE_ME
+    wheel_base: REPLACE_ME
+    wheel_tread: REPLACE_ME
+    front_overhang: REPLACE_ME
+    rear_overhang: REPLACE_ME
+    left_overhang: REPLACE_ME
+    right_overhang: REPLACE_ME
+    vehicle_height: REPLACE_ME
+    max_steer_angle: REPLACE_ME

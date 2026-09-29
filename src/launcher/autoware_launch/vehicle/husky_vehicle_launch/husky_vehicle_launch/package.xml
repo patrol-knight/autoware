@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>husky_vehicle_launch</name>
+  <version>0.1.0</version>
+  <description>Autoware launch integration for Husky</description>
+  <maintainer email="team@example.com">Husky team</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>husky_vehicle_description</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>
