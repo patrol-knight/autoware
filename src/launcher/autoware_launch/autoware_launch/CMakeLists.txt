@@ -4,6 +4,8 @@ project(autoware_launch)
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
+install(PROGRAMS scripts/localization_state_logger.py DESTINATION lib/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()

@@ -131,6 +131,7 @@ class FixpositionDriverNode {
     // TF broadcasters
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_br_;
     std::unique_ptr<tf2_ros::StaticTransformBroadcaster> static_br_;
+    bool publish_poi_vrtk_tf_ = true;
 
     // State
     JumpDetector jump_detector_;

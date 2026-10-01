@@ -1,19 +1,11 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="launch_driver" default="false"/>
-  <arg name="launch_vehicle" default="false"/>
-  <arg name="publish_sensor_tf" default="true"/>
   <arg name="vlp16_config_file" default="$(find-pkg-share husky_sensor_kit_launch)/config/VLP16.param.yaml"/>
   <arg name="fixposition_config" default="config.yaml"/>
   <arg name="launch_gnss_poser" default="false"/>
   <arg name="vehicle_mirror_param_file" default=""/>
   <arg name="pointcloud_container_name" default="pointcloud_container"/>
-
-  <group unless="$(var launch_vehicle)">
-    <group if="$(var publish_sensor_tf)">
-      <include file="$(find-pkg-share husky_sensor_kit_launch)/launch/sensor_tf.launch.py"/>
-    </group>
-  </group>
 
   <!-- tier4_sensing_launch pushes /sensing; the hardware driver topics use
        root names so the existing relays can subscribe to them. -->
@@ -25,6 +17,7 @@
     </include>
     <include file="$(find-pkg-share fixposition_driver_ros2)/launch/node.launch">
       <arg name="config" value="$(var fixposition_config)"/>
+      <arg name="publish_poi_vrtk_tf" value="false"/>
     </include>
   </group>
 

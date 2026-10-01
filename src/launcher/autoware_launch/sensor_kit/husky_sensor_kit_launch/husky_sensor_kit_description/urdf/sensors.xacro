@@ -27,4 +27,12 @@
   <xacro:husky_sensor_frame name="velodyne"/>
   <xacro:husky_sensor_frame name="FP_POI"/>
   <xacro:husky_sensor_frame name="GNSS1"/>
+
+  <xacro:property name="poi_vrtk" value="${calibration['FP_POI']['FP_VRTK']}"/>
+  <joint name="FP_POI_to_FP_VRTK" type="fixed">
+    <parent link="FP_POI"/>
+    <child link="FP_VRTK"/>
+    <origin xyz="${poi_vrtk['x']} ${poi_vrtk['y']} ${poi_vrtk['z']}" rpy="${poi_vrtk['roll']} ${poi_vrtk['pitch']} ${poi_vrtk['yaw']}"/>
+  </joint>
+  <link name="FP_VRTK"/>
 </robot>

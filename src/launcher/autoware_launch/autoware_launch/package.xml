@@ -12,6 +12,11 @@
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
   <exec_depend>autoware_adapi_adaptors</exec_depend>
+  <exec_depend>autoware_default_adapi</exec_depend>
+  <exec_depend>autoware_adapi_v1_msgs</exec_depend>
+  <exec_depend>diagnostic_msgs</exec_depend>
+  <exec_depend>rcl_interfaces</exec_depend>
+  <exec_depend>rclpy</exec_depend>
   <exec_depend>autoware_agnocast_wrapper</exec_depend>
   <exec_depend>autoware_carla_interface</exec_depend>
   <exec_depend>autoware_diagnostic_graph_aggregator</exec_depend>

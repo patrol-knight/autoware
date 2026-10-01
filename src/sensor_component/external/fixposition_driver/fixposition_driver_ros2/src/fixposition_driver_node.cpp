@@ -49,6 +49,8 @@ FixpositionDriverNode::FixpositionDriverNode(std::shared_ptr<rclcpp::Node> nh,
     nmea_epoch_data_   { params_.nmea_epoch_ }  // clang-format on
 
 {
+    publish_poi_vrtk_tf_ = nh_->declare_parameter<bool>("publish_poi_vrtk_tf", true);
+
     // Override default QoS settings
     // - Short-queue sensor-type QoS
     if (params_.qos_type_ == "sensor_short") {
@@ -557,6 +559,10 @@ void FixpositionDriverNode::StopNode() {
 // ---------------------------------------------------------------------------------------------------------------------
 
 void FixpositionDriverNode::ProcessTfData(const TfData& tf_data) {
+    if (!publish_poi_vrtk_tf_ && tf_data.frame_id == "FP_POI" && tf_data.child_frame_id == "FP_VRTK") {
+        return;
+    }
+
     // Check if TF is valid
     if (tf_data.rotation.w() == 0 && tf_data.rotation.vec().isZero()) {
         RCLCPP_WARN_THROTTLE(logger_, *nh_->get_clock(), 1e4,

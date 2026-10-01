@@ -1075,6 +1075,7 @@ std::tuple<geometry_msgs::msg::PoseWithCovarianceStamped, double> NDTScanMatcher
 
   std::vector<Particle> particle_array;
   auto output_cloud = std::make_shared<pcl::PointCloud<PointSource>>();
+  double best_score = 0.0;
 
   // publish the estimated poses in 20 times to see the progress and to avoid dropping data
   visualization_msgs::msg::MarkerArray marker_array;
@@ -1125,11 +1126,16 @@ std::tuple<geometry_msgs::msg::PoseWithCovarianceStamped, double> NDTScanMatcher
     result[5] = rpy.z;
     tpe.add_trial(TreeStructuredParzenEstimator::Trial{result, ndt_result.transform_probability});
 
-    auto sensor_points_in_map_ptr = std::make_shared<pcl::PointCloud<PointSource>>();
-    autoware_utils_pcl::transform_pointcloud(
-      *sensor_points_in_baselink_frame_, *sensor_points_in_map_ptr, ndt_result.pose);
-    publish_point_cloud(
-      initial_pose_with_cov.header.stamp, param_.frame.map_frame, sensor_points_in_map_ptr);
+    // Publish the first candidate and each strict improvement of the score used to select the
+    // final initial pose. Avoid replacing the displayed best match with a worse candidate.
+    if (i == 0 || particle.score > best_score) {
+      best_score = particle.score;
+      auto sensor_points_in_map_ptr = std::make_shared<pcl::PointCloud<PointSource>>();
+      autoware_utils_pcl::transform_pointcloud(
+        *sensor_points_in_baselink_frame_, *sensor_points_in_map_ptr, ndt_result.pose);
+      publish_point_cloud(
+        initial_pose_with_cov.header.stamp, param_.frame.map_frame, sensor_points_in_map_ptr);
+    }
   }
 
   auto best_particle_ptr = std::max_element(

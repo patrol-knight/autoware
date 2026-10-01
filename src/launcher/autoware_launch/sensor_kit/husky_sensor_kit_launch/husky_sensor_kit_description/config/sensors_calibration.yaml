@@ -4,6 +4,7 @@
 # 0.03282 m above base_link.
 # Translation is metres; RPY is radians.
 # FP_POI and FP_VRTK coincide in the current Fixposition configuration.
+# Husky owns this fixed transform; its Fixposition driver suppresses its copy.
 base_link:
   husky_wheel_center:
     x: 0.0
@@ -31,6 +32,14 @@ husky_wheel_center:
     x: -0.301
     y: 0.0
     z: 0.526
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
+FP_POI:
+  FP_VRTK:
+    x: 0.0
+    y: 0.0
+    z: 0.0
     roll: 0.0
     pitch: 0.0
     yaw: 0.0

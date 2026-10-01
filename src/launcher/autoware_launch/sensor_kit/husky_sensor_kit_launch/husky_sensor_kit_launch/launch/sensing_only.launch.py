@@ -1,4 +1,4 @@
-"""Compatibility wrapper for starting the Husky sensing launch directly."""
+"""Compatibility wrapper for starting the Husky vehicle model and sensing launch."""
 
 from pathlib import Path
 
@@ -11,6 +11,7 @@ from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     sensing_launch = Path(get_package_share_directory("husky_sensor_kit_launch")) / "launch" / "sensing.launch.xml"
+    vehicle_launch = Path(get_package_share_directory("tier4_vehicle_launch")) / "launch" / "vehicle.launch.xml"
 
     return LaunchDescription(
         [
@@ -19,13 +20,20 @@ def generate_launch_description():
                 default_value="true",
                 description="Start the VLP-16 and Fixposition hardware drivers",
             ),
-            DeclareLaunchArgument("publish_sensor_tf", default_value="true"),
+            DeclareLaunchArgument("use_sim_time", default_value="false"),
+            IncludeLaunchDescription(
+                AnyLaunchDescriptionSource(str(vehicle_launch)),
+                launch_arguments={
+                    "vehicle_model": "husky_vehicle",
+                    "sensor_model": "husky_sensor_kit",
+                    "launch_vehicle_interface": "false",
+                    "use_sim_time": LaunchConfiguration("use_sim_time"),
+                }.items(),
+            ),
             IncludeLaunchDescription(
                 AnyLaunchDescriptionSource(str(sensing_launch)),
                 launch_arguments={
                     "launch_driver": LaunchConfiguration("launch_driver"),
-                    "launch_vehicle": "false",
-                    "publish_sensor_tf": LaunchConfiguration("publish_sensor_tf"),
                     "launch_gnss_poser": "false",
                 }.items(),
             ),
