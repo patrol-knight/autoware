@@ -48,7 +48,7 @@
       max_iterations: 30
 
       # Number of threads used for parallel computing
-      num_threads: 4
+      num_threads: 6
 
       regularization:
         enable: false
@@ -110,9 +110,9 @@
       # Note that this covariance matrix is empirically derived
       output_pose_covariance:
         [
-          0.0225, 0.0,   0.0,   0.0,      0.0,      0.0,
-          0.0,   0.0225, 0.0,   0.0,      0.0,      0.0,
-          0.0,   0.0,   0.0225, 0.0,      0.0,      0.0,
+          0.0025, 0.0,   0.0,   0.0,      0.0,      0.0,
+          0.0,   0.0025, 0.0,   0.0,      0.0,      0.0,
+          0.0,   0.0,   0.0025, 0.0,      0.0,      0.0,
           0.0,   0.0,   0.0,   0.000625, 0.0,      0.0,
           0.0,   0.0,   0.0,   0.0,      0.000625, 0.0,
           0.0,   0.0,   0.0,   0.0,      0.0,      0.000625,

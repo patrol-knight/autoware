@@ -100,6 +100,8 @@ geometry_msgs::msg::TwistWithCovarianceStamped fuse_twist(
     gyro_covariance_original.y / static_cast<double>(gyro_queue.size());
   twist_with_cov.twist.covariance[COV_IDX_XYZRPY::YAW_YAW] =
     gyro_covariance_original.z / static_cast<double>(gyro_queue.size());
+  twist_with_cov.twist.covariance[0] = 0.0025;  // linear.x，(m/s)²
+  twist_with_cov.twist.covariance[35] = 0.0004;   // angular.z，(rad/s)²
 
   return twist_with_cov;
 }
