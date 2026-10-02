@@ -11,6 +11,7 @@
   <arg name="planning_validator_trajectory_checker_param_path"/>
   <arg name="planning_validator_intersection_collision_checker_param_path"/>
   <arg name="planning_validator_rear_collision_checker_param_path"/>
+  <arg name="launch_planning_validator" default="true"/>
   <!-- Auto mode setting-->
   <arg name="enable_all_modules_auto_mode"/>
   <arg name="is_simulation"/>
@@ -75,7 +76,7 @@
     </group>
 
     <!-- planning validator -->
-    <group>
+    <group if="$(var launch_planning_validator)">
       <let name="validator_input_trajectory" value="/planning/trajectory_generator/trajectory" if="$(eval &quot;'$(var planning_setting)'=='diffusion_planner'&quot;)"/>
       <let name="validator_input_trajectory" value="/planning/scenario_planning/velocity_smoother/trajectory" if="$(eval &quot;'$(var planning_setting)'=='rule_based'&quot;)"/>
       <include file="$(find-pkg-share autoware_planning_validator)/launch/planning_validator.launch.xml">
@@ -90,6 +91,17 @@
         <arg name="planning_validator_intersection_collision_checker_param_path" value="$(var planning_validator_intersection_collision_checker_param_path)"/>
         <arg name="planning_validator_rear_collision_checker_param_path" value="$(var planning_validator_rear_collision_checker_param_path)"/>
       </include>
+    </group>
+
+    <!-- Inspection-only pipeline: publish the smoothed trajectory without perception-dependent validation. -->
+    <group unless="$(var launch_planning_validator)">
+      <node_container pkg="rclcpp_components" exec="component_container" name="trajectory_output_container" namespace="" output="screen">
+        <composable_node pkg="topic_tools" plugin="topic_tools::RelayNode" name="trajectory_output_relay" namespace="">
+          <param name="input_topic" value="/planning/scenario_planning/velocity_smoother/trajectory"/>
+          <param name="output_topic" value="/planning/trajectory"/>
+          <extra_arg name="use_intra_process_comms" value="false"/>
+        </composable_node>
+      </node_container>
     </group>
 
     <!-- planning evaluator -->

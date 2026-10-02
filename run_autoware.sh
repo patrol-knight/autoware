@@ -3,7 +3,7 @@ set -euo pipefail
 
 WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAP_PATH="${MAP_PATH:-/home/teame/husky/map}"
-# Sensing-only launch loads vehicle_info even though vehicle nodes are disabled.
+# Autoware loads vehicle and sensor configuration for both sensing and localization.
 VEHICLE_MODEL="${VEHICLE_MODEL:-husky_vehicle}"
 SENSOR_MODEL="${SENSOR_MODEL:-husky_sensor_kit}"
 
@@ -47,30 +47,33 @@ source /opt/ros/humble/setup.bash
 source "$WORKSPACE/install/setup.bash"
 set -u
 
-echo "Starting autoware.launch.xml with Husky sensing, sensor drivers, and RViz."
-echo "Vehicle model $VEHICLE_MODEL supplies launch parameters; no vehicle nodes are started."
+echo "Starting autoware.launch.xml with Husky vehicle and sensor models."
+echo "Vehicle model: $VEHICLE_MODEL; sensor model: $SENSOR_MODEL."
 
 exec ros2 launch autoware_launch autoware.launch.xml \
   map_path:="$MAP_PATH" \
   vehicle_model:="$VEHICLE_MODEL" \
   sensor_model:="$SENSOR_MODEL" \
-  system_run_mode:=online \
-  launch_vehicle:=false \
+  system_run_mode:=logging_simulation \
+  launch_vehicle:=true \
   launch_vehicle_interface:=false \
   launch_system:=false \
-  launch_map:=false \
+  launch_map:=true \
   launch_sensing:=true \
-  launch_sensing_driver:=true \
-  launch_localization:=false \
+  launch_sensing_driver:=false \
+  launch_localization:=true \
+  localization_gnss_enabled:=false \
   launch_perception:=false \
-  launch_planning:=false \
+  launch_planning:=true \
+  planning_module_preset:=husky_no_perception \
+  launch_planning_test_adaptors:=true \
   launch_control:=false \
   launch_api:=false \
   launch_system_monitor:=false \
   launch_dummy_diag_publisher:=false \
-  launch_pointcloud_container:=false \
+  launch_pointcloud_container:=true \
   rviz:=true \
-  rviz_config_name:=husky_sensing.rviz \
+  rviz_config_name:=husky_planning.rviz \
   rviz_respawn:=false \
-  use_sim_time:=false \
+  use_sim_time:=true \
   "$@"

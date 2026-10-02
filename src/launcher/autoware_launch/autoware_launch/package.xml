@@ -14,6 +14,9 @@
   <exec_depend>autoware_adapi_adaptors</exec_depend>
   <exec_depend>autoware_default_adapi</exec_depend>
   <exec_depend>autoware_adapi_v1_msgs</exec_depend>
+  <exec_depend>autoware_planning_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>diagnostic_msgs</exec_depend>
   <exec_depend>rcl_interfaces</exec_depend>
   <exec_depend>rclpy</exec_depend>
