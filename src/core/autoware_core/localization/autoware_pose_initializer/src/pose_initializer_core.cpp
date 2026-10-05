@@ -48,6 +48,7 @@ PoseInitializer::PoseInitializer(const rclcpp::NodeOptions & options)
 
   output_pose_covariance_ = get_covariance_parameter(this, "output_pose_covariance");
   gnss_particle_covariance_ = get_covariance_parameter(this, "gnss_particle_covariance");
+  allow_gnss_reinitialize_ = declare_parameter<bool>("allow_gnss_reinitialize", true);
   diagnostics_pose_reliable_ = std::make_unique<autoware_utils_diagnostics::DiagnosticsInterface>(
     this, "pose_initializer_status");
 
@@ -158,6 +159,19 @@ void PoseInitializer::on_initialize(
   const Initialize::Service::Request::SharedPtr req,
   const Initialize::Service::Response::SharedPtr res)
 {
+  // The automatic initializer sends AUTO with no pose. Once localization is active,
+  // repeated GNSS requests must not reset the EKF and NDT. An explicit pose from
+  // RViz/API is still allowed to reinitialize localization.
+  if (
+    !allow_gnss_reinitialize_ && state_.state == State::Message::INITIALIZED &&
+    req->method == Initialize::Service::Request::AUTO && req->pose_with_covariance.empty()) {
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), 10000,
+      "Ignoring automatic GNSS initialization: localization is already initialized");
+    res->status.success = true;
+    return;
+  }
+
   try {
     // NOTE: This function is not executed during initialization because mutually exclusive.
     if (stop_check_ && !stop_check_->isVehicleStopped(stop_check_duration_)) {

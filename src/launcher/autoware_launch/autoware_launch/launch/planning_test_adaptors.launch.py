@@ -1,4 +1,4 @@
-"""Minimal interfaces for inspecting planning without Autoware control."""
+"""Forward RViz goals to the planning route service."""
 
 from launch import LaunchDescription
 from launch.substitutions import LaunchConfiguration

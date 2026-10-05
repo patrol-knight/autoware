@@ -1,0 +1,54 @@
+# Husky A200 control bring-up without Autoware perception.
+# The skid-steer follower publishes an internal Twist. The explicitly armed
+# Husky vehicle bridge owns the physical command topic and status reports.
+launch:
+  - arg:
+      name: trajectory_follower_mode
+      default: husky_skid_steer
+
+  # The stock container consumes steering-angle Control messages. Husky uses
+  # the separately armed Twist bridge and its ControlModeCommand service.
+  - arg:
+      name: launch_standard_control_container
+      default: "false"
+
+  # No external command source is used in the current Husky bring-up.
+  - arg:
+      name: launch_external_cmd_selector
+      default: "false"
+  - arg:
+      name: launch_external_cmd_converter
+      default: "false"
+
+  # Read the bridge's authoritative operation mode without requiring AD API.
+  - arg:
+      name: lane_departure_operation_mode_topic
+      default: /system/operation_mode/state
+
+  # Retain the map/route/trajectory boundary check.
+  - arg:
+      name: launch_lane_departure_checker
+      default: "true"
+
+  # The stock validator computes steering-based lateral jerk using an
+  # Ackermann wheelbase. A skid-steer-specific validator is still needed.
+  - arg:
+      name: launch_control_validator
+      default: "false"
+
+  # These checks require perception objects and/or obstacle point clouds.
+  - arg:
+      name: launch_autonomous_emergency_braking
+      default: "false"
+  - arg:
+      name: launch_collision_detector
+      default: "false"
+  - arg:
+      name: launch_obstacle_collision_checker
+      default: "false"
+  - arg:
+      name: launch_predicted_path_checker
+      default: "false"
+  - arg:
+      name: launch_control_evaluator
+      default: "false"

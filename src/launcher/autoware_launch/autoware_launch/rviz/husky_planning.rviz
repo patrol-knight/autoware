@@ -41,47 +41,16 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        FP_POI:
-          Value: true
-        FP_VRTK:
-          Value: true
-        GNSS1:
-          Value: true
-        base_link:
-          Value: true
-        husky_wheel_center:
-          Value: true
-        map:
-          Value: true
-        ndt_base_link:
-          Value: true
-        velodyne:
-          Value: true
-        viewer:
-          Value: true
       Marker Scale: 0.5
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        map:
-          base_link:
-            husky_wheel_center:
-              FP_POI:
-                FP_VRTK:
-                  {}
-              GNSS1:
-                {}
-              velodyne:
-                {}
-          ndt_base_link:
-            {}
-          viewer:
-            {}
+        {}
       Update Interval: 0
       Value: false
-    - Alpha: 0.7
+    - Alpha: 0.699999988079071
       Class: rviz_default_plugins/RobotModel
       Collision Enabled: false
       Description File: ""
@@ -93,10 +62,45 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /robot_description
       Enabled: true
+      Links:
+        All Links Enabled:
+          {}
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        FP_POI:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        FP_VRTK:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        GNSS1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        Link Tree Style: Links in Alphabetic Order
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        husky_wheel_center:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        velodyne:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Mass Properties:
+        Inertia: false
+        Mass: false
       Name: Husky vehicle
       TF Prefix: ""
       Update Interval: 0
       Value: true
+      Visual Enabled: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -109,7 +113,7 @@ Visualization Manager:
       Color: 160; 160; 160
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -130,10 +134,19 @@ Visualization Manager:
         Value: /map/pointcloud_map
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: Lanelet2 vector map
+      Namespaces:
+        center_lane_line: true
+        center_line_arrows: true
+        lane_start_bound: true
+        lanelet_id: true
+        left_lane_bound: true
+        right_lane_bound: true
+        road_lanelets: false
+        waypoints: true
       Topic:
         Depth: 5
         Durability Policy: Transient Local
@@ -144,6 +157,12 @@ Visualization Manager:
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: Planned lanelet route
+      Namespaces:
+        goal_lanelets: false
+        lane_start_bound: true
+        left_lane_bound: true
+        right_lane_bound: true
+        route_lanelets: false
       Topic:
         Depth: 5
         Durability Policy: Transient Local
@@ -152,31 +171,74 @@ Visualization Manager:
         Value: /planning/mission_planning/route_marker
       Value: true
     - Class: rviz_plugins/Trajectory
-      Enabled: false
-      Name: Raw planned trajectory
+      Color Border Vel Max: 3
+      Enabled: true
+      Name: Planned trajectory (speed)
       Topic:
         Depth: 5
         Durability Policy: Volatile
+        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /planning/trajectory
-      Value: false
-      View Path:
+      Value: true
+      View Footprint:
         Alpha: 1
-        Constant Width: true
-        Value: true
-        Width: 0.18
-      View Velocity:
+        Color: 230; 230; 50
+        Offset from BaseLink: 0
+        Rear Overhang: 0.25999999046325684
         Value: false
-    - Class: rviz_default_plugins/Marker
+        Vehicle Length: 1.0299999713897705
+        Vehicle Width: 0.6639999747276306
+      View Path:
+        Alpha: 0.8500000238418579
+        Constant Width: true
+        Fade Out Distance: 0
+        Max Velocity Color: 0; 255; 0
+        Mid Velocity Color: 255; 200; 0
+        Min Velocity Color: 255; 0; 0
+        Value: true
+        Width: 0.6639999747276306
+      View Point:
+        Alpha: 1
+        Color: 0; 60; 255
+        Offset: 0
+        Radius: 0.10000000149011612
+        Value: false
+      View Text Slope:
+        Scale: 0.30000001192092896
+        Value: false
+      View Text Time:
+        Scale: 0.30000001192092896
+        Value: false
+      View Text Velocity:
+        Scale: 0.30000001192092896
+        Value: false
+      View Velocity:
+        Alpha: 1
+        Color: 0; 0; 0
+        Constant Color: false
+        Scale: 0.30000001192092896
+        Value: false
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 255; 180; 0
       Enabled: true
-      Name: Planned trajectory (green)
+      Head Length: 0.30000001192092896
+      Head Radius: 0.20000000298023224
+      Name: Goal pose (orange)
+      Shaft Length: 0.800000011920929
+      Shaft Radius: 0.10000000149011612
+      Shape: Axes
       Topic:
         Depth: 5
-        Durability Policy: Transient Local
+        Durability Policy: Volatile
+        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /planning/trajectory_marker
+        Value: /planning/mission_planning/echo_back_goal_pose
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -190,7 +252,7 @@ Visualization Manager:
       Color: 0; 255; 0
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -211,9 +273,9 @@ Visualization Manager:
         Value: /localization/pose_estimator/points_aligned
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
+      Enabled: true
       Name: Monte Carlo candidate poses
       Namespaces:
         initial_pose_index_color_marker: false
@@ -228,13 +290,13 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/pose_estimator/monte_carlo_initial_pose_marker
-      Value: false
+      Value: true
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.10000000149011612
       Class: rviz_default_plugins/Pose
       Color: 255; 0; 0
-      Enabled: false
+      Enabled: true
       Head Length: 0.3499999940395355
       Head Radius: 0.2199999988079071
       Name: NDT pose estimator (red)
@@ -248,13 +310,13 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/pose_estimator/pose
-      Value: false
+      Value: true
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.10000000149011612
       Class: rviz_default_plugins/Pose
       Color: 255; 255; 255
-      Enabled: false
+      Enabled: true
       Head Length: 0.25
       Head Radius: 0.14000000059604645
       Name: EKF pose (white)
@@ -268,10 +330,10 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/pose_twist_fusion_filter/pose
-      Value: false
+      Value: true
     - Buffer Size: 3000
       Class: rviz_plugins::PoseHistory
-      Enabled: false
+      Enabled: true
       Line:
         Alpha: 1
         Color: 135; 206; 235
@@ -285,7 +347,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/pose_twist_fusion_filter/pose
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -341,7 +403,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 13.992658615112305
+      Scale: 22.934734344482422
       Target Frame: base_link
       Value: TopDownOrtho (rviz_default_plugins)
       X: 0

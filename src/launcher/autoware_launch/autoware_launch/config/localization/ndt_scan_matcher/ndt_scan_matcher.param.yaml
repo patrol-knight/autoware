@@ -48,7 +48,7 @@
       max_iterations: 30
 
       # Number of threads used for parallel computing
-      num_threads: 6
+      num_threads: 4
 
       regularization:
         enable: false

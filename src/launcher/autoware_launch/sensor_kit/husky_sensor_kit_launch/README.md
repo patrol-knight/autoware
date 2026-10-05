@@ -43,16 +43,18 @@ integration is still needed before planning or control uses Husky geometry.
 
 ## Current data paths
 
-- `/velodyne_points` to `/sensing/lidar/top/pointcloud_raw_ex`, then
-  `crop_box_filter_self` → `distortion_corrector_node` →
-  `ring_outlier_filter` → `/sensing/lidar/concatenated/pointcloud`.
+- `/velodyne_points` feeds `distortion_corrector_node` directly, which publishes
+  `/sensing/lidar/concatenated/pointcloud`. The ring outlier filter is bypassed;
+  `/sensing/lidar/top/rectified/pointcloud_ex` is no longer published.
+  The best-effort `/sensing/lidar/top/pointcloud_raw_ex` copy is available
+  for monitoring and recording; it is not an input to distortion correction.
 - `/fixposition/fpa/corrimu` (`fixposition_driver_msgs/FpaImu`) to
   `/sensing/imu/imu_data` (`sensor_msgs/Imu`), preserving the `FP_VRTK` frame.
 - `/fixposition/gnss1` through a QoS bridge and `autoware_gnss_poser` to GNSS pose.
 - `/husky/platform/odom/filtered` to Autoware twist input.
 
-The crop box uses the measured Husky dimensions in Clearpath's current
-bottom-plate `base_link` frame. Motion correction needs the Husky platform's
+The self crop and ring outlier filter stages are bypassed, so points reflected
+from the Husky body and isolated outliers may remain in the cloud. Motion correction needs the Husky platform's
 `/husky/platform/odom/filtered` twist; without it the distortion corrector
 forwards the cloud and reports `Twist queue is empty`. Check point cloud fields,
 TF and timestamps before using localization. The GNSS poser currently infers
@@ -92,11 +94,10 @@ The default VLP-16 network settings are in
 `husky_sensor_kit_launch/config/VLP16.param.yaml` and can be overridden with
 `vlp16_config_file:=/path/to/VLP16.param.yaml`.
 
-Check each LiDAR stage with `ros2 topic hz` on
-`/sensing/lidar/top/pointcloud_raw_ex`,
-`/sensing/lidar/top/self_cropped/pointcloud_ex`,
-`/sensing/lidar/top/rectified/pointcloud_ex` and
-`/sensing/lidar/concatenated/pointcloud`. Also check
+Check the LiDAR input and processed output with `ros2 topic hz` on
+`/velodyne_points` and `/sensing/lidar/concatenated/pointcloud`. The
+`/sensing/lidar/top/pointcloud_raw_ex` monitoring copy can be checked
+separately. Also check
 `/sensing/imu/imu_data` and `/sensing/gnss/fix`. Check TF with
 `ros2 run tf2_ros tf2_echo base_link velodyne`.
 

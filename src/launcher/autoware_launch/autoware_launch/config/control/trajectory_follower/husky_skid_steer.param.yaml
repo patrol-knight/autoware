@@ -1,0 +1,22 @@
+# Conservative starting values for a Husky A200.
+# The follower publishes /control/husky/cmd_vel; the vehicle bridge gates /cmd_vel.
+/**:
+  ros__parameters:
+    control_rate_hz: 20.0
+    max_input_age_s: 0.7
+    lookahead_distance: 0.6
+    max_path_distance: 1.0
+    max_linear_speed: 0.3
+    max_angular_speed: 0.5
+    max_linear_accel: 0.3
+    max_linear_decel: 0.3
+    max_angular_accel: 0.5
+    heading_gain: 1.5
+    rotate_to_path_threshold: 0.7
+    goal_position_tolerance: 0.15
+    goal_yaw_tolerance: 0.10
+    stop_speed_threshold: 0.03
+    prediction_horizon_s: 2.0
+    prediction_step_s: 0.1
+    linear_velocity_feedback_gain: 0.5
+    angular_velocity_feedback_gain: 0.5

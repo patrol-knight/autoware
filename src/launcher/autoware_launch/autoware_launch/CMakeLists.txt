@@ -6,6 +6,8 @@ ament_auto_find_build_dependencies()
 
 install(PROGRAMS scripts/localization_state_logger.py DESTINATION lib/${PROJECT_NAME})
 install(PROGRAMS scripts/planning_test_adaptor.py DESTINATION lib/${PROJECT_NAME})
+install(PROGRAMS scripts/husky_skid_steer_trajectory_follower.py DESTINATION lib/${PROJECT_NAME})
+install(FILES scripts/husky_control_core.py DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

@@ -62,6 +62,7 @@ private:
   std::unique_ptr<autoware_utils_logging::LoggerLevelConfigure> logger_configure_;
   std::unique_ptr<autoware_utils_diagnostics::DiagnosticsInterface> diagnostics_pose_reliable_;
   double stop_check_duration_;
+  bool allow_gnss_reinitialize_;
 
   void change_node_trigger(bool flag, bool need_spin = false);
   void set_user_defined_initial_pose(

@@ -24,7 +24,7 @@
   <arg name="localization_gnss_enabled" default="true" description="allow automatic GNSS pose initialization"/>
   <arg name="launch_perception" default="true" description="launch perception"/>
   <arg name="launch_planning" default="true" description="launch planning"/>
-  <arg name="launch_planning_test_adaptors" default="false" description="publish manual mode and bridge RViz goal for planning tests without control"/>
+  <arg name="launch_planning_test_adaptors" default="false" description="forward RViz goals to the planning route service"/>
   <arg name="launch_control" default="true" description="launch control"/>
   <arg name="launch_api" default="true" description="launch api"/>
   <!-- Global parameters -->

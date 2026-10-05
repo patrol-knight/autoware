@@ -10,6 +10,8 @@
   <arg name="use_aeb_autoware_state_check" default="true"/>
   <arg name="use_sim_time" default="false"/>
   <arg name="vehicle_model" default="sample_vehicle"/>
+  <arg name="launch_standard_control_container" default="true"/>
+  <arg name="lane_departure_operation_mode_topic" default="/api/operation_mode/state"/>
 
   <!-- Input topic parameters for control modules -->
   <arg name="control_input_objects_topic_name" default="/perception/object_recognition/objects"/>
@@ -30,6 +32,9 @@
     <!-- option -->
     <arg name="vehicle_param_file" value="$(find-pkg-share $(var vehicle_model)_description)/config/vehicle_info.param.yaml"/>
     <arg name="vehicle_id" value="$(var vehicle_id)"/>
+    <arg name="trajectory_follower_mode" value="$(var trajectory_follower_mode)"/>
+    <arg name="launch_standard_control_container" value="$(var launch_standard_control_container)"/>
+    <arg name="lane_departure_operation_mode_topic" value="$(var lane_departure_operation_mode_topic)"/>
     <arg name="enable_obstacle_collision_checker" value="false"/>
 
     <!-- Input topic parameters -->
@@ -65,4 +70,18 @@
     <arg name="use_aeb_autoware_state_check" value="$(var use_aeb_autoware_state_check)"/>
     <arg name="predicted_path_checker_param_path" value="$(find-pkg-share autoware_launch)/config/control/predicted_path_checker/predicted_path_checker.param.yaml"/>
   </include>
+
+  <!-- Husky uses body linear/angular velocity, not the stock steering-angle controller. -->
+  <group if="$(eval &quot;'$(var trajectory_follower_mode)' == 'husky_skid_steer'&quot;)">
+    <node
+      pkg="autoware_launch"
+      exec="husky_skid_steer_trajectory_follower.py"
+      name="husky_skid_steer_trajectory_follower"
+      namespace="/control/trajectory_follower"
+      output="screen"
+    >
+      <param from="$(find-pkg-share autoware_launch)/config/control/trajectory_follower/husky_skid_steer.param.yaml"/>
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+    </node>
+  </group>
 </launch>

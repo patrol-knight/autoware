@@ -1,7 +1,36 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- Control bridge is intentionally absent until vehicle commands and feedback are specified. -->
   <arg name="vehicle_id" default="$(env VEHICLE_ID default)"/>
   <arg name="raw_vehicle_cmd_converter_param_path" default=""/>
   <arg name="initial_engage_state" default="false"/>
+  <arg name="cmd_vel_topic" default="$(env HUSKY_CMD_VEL_TOPIC /cmd_vel)"/>
+  <arg name="robot_namespace" default="$(env HUSKY_ROBOT_NAMESPACE /husky)"/>
+  <arg name="allow_platform_output" default="$(env HUSKY_ALLOW_PLATFORM_OUTPUT false)"/>
+
+  <node
+    pkg="husky_vehicle_launch"
+    exec="husky_twist_vehicle_interface.py"
+    name="husky_twist_vehicle_interface"
+    output="screen"
+  >
+    <param name="input_topic" value="/control/husky/cmd_vel"/>
+    <param name="output_topic" value="$(var cmd_vel_topic)"/>
+    <param name="estop_topic" value="$(var robot_namespace)/platform/emergency_stop"/>
+    <param name="odometry_topic" value="$(var robot_namespace)/platform/odom/filtered"/>
+    <param name="velocity_frame_id" value="base_link"/>
+    <param name="max_odometry_age_s" value="0.7"/>
+    <param name="tracking_state_topic" value="/control/husky/tracking_state"/>
+    <param name="tracking_timeout_s" value="0.5"/>
+    <!-- Joy and RViz twist marker are local; RC teleop is remote. Adjust to match the actual command mux. -->
+    <param name="manual_topics" value="['$(var robot_namespace)/joy_teleop/cmd_vel', '$(var robot_namespace)/rc_teleop/cmd_vel', '$(var robot_namespace)/twist_marker_server/cmd_vel']"/>
+    <param name="remote_manual_topics" value="['$(var robot_namespace)/rc_teleop/cmd_vel']"/>
+    <param name="allow_platform_output" value="$(var allow_platform_output)"/>
+    <param name="command_timeout_s" value="0.25"/>
+    <param name="estop_timeout_s" value="2.0"/>
+    <param name="manual_hold_s" value="1.0"/>
+    <param name="max_linear_speed" value="1.0"/>
+    <param name="max_angular_speed" value="1.0"/>
+    <param name="publish_rate_hz" value="20.0"/>
+    <param name="stop_publish_duration_s" value="0.6"/>
+  </node>
 </launch>

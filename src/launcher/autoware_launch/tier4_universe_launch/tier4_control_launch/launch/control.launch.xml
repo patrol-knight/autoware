@@ -1,6 +1,7 @@
 <launch>
   <!-- controller -->
   <arg name="trajectory_follower_mode" default="trajectory_follower_node"/>
+  <arg name="launch_standard_control_container" default="true"/>
   <arg name="lateral_controller_mode"/>
   <arg name="longitudinal_controller_mode"/>
   <arg name="check_external_emergency_heartbeat"/>
@@ -11,6 +12,7 @@
 
   <!-- control-check modules, optional -->
   <arg name="launch_lane_departure_checker" default="true"/>
+  <arg name="lane_departure_operation_mode_topic" default="/api/operation_mode/state"/>
   <arg name="launch_control_validator" default="true"/>
   <arg name="launch_autonomous_emergency_braking" default="true"/>
   <arg name="launch_collision_detector" default="true"/>
@@ -80,7 +82,7 @@
 
     <group>
       <!-- set a control container to run all required components in the same process -->
-      <node_container pkg="$(var container_package)" exec="$(var container_executable)" name="control_container" namespace="">
+      <node_container pkg="$(var container_package)" exec="$(var container_executable)" name="control_container" namespace="" if="$(var launch_standard_control_container)">
         <!-- shift decider -->
         <composable_node pkg="autoware_shift_decider" plugin="autoware::shift_decider::ShiftDecider" name="autoware_shift_decider">
           <remap from="input/control_cmd" to="/control/trajectory_follower/control_cmd"/>
@@ -215,6 +217,7 @@
       <group if="$(var launch_lane_departure_checker)">
         <load_composable_node target="/control/control_check_container">
           <composable_node pkg="autoware_lane_departure_checker" plugin="autoware::lane_departure_checker::LaneDepartureCheckerNode" name="lane_departure_checker_node" namespace="trajectory_follower">
+            <remap from="/api/operation_mode/state" to="$(var lane_departure_operation_mode_topic)"/>
             <remap from="~/input/odometry" to="/localization/kinematic_state"/>
             <remap from="~/input/lanelet_map_bin" to="/map/vector_map"/>
             <remap from="~/input/route" to="/planning/mission_planning/route"/>

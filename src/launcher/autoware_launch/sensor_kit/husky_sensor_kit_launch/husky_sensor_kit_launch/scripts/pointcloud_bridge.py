@@ -11,7 +11,7 @@ class PointCloudBridge(Node):
     def __init__(self):
         super().__init__("husky_pointcloud_bridge")
         self.raw_publisher = self.create_publisher(
-            PointCloud2, "/sensing/lidar/top/pointcloud_raw_ex", 10
+            PointCloud2, "/sensing/lidar/top/pointcloud_raw_ex", qos_profile_sensor_data
         )
         self.subscription = self.create_subscription(
             PointCloud2, "/velodyne_points", self.on_cloud, qos_profile_sensor_data
