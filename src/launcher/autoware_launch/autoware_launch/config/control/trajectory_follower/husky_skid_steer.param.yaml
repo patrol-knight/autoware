@@ -1,5 +1,5 @@
 # Conservative starting values for a Husky A200.
-# The follower publishes /control/husky/cmd_vel; the vehicle bridge gates /cmd_vel.
+# The follower publishes /control/husky/cmd_vel; the vehicle bridge gates /husky/cmd_vel.
 /**:
   ros__parameters:
     control_rate_hz: 20.0

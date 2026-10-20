@@ -84,8 +84,10 @@ class TwistGate:
         self.manual_source = source
         self.disable("manual_takeover")
 
-    def request_manual(self):
-        self.manual_source = "local"
+    def request_manual(self, source: str | None = None):
+        if source is not None and source not in ("local", "remote"):
+            raise ValueError("Manual source must be local or remote")
+        self.manual_source = source or self.manual_source or "local"
         return self.disable("manual_request")
 
     def disable(self, reason="disabled"):
@@ -141,7 +143,9 @@ class TwistGate:
             or not self._fresh(self.estop_at, now, self.estop_timeout)
         ):
             return "not_ready"
-        if self.reason in ("manual_takeover", "manual_request"):
+        if self.reason not in ("disabled", "output_topic_conflict") and self._fresh(self.manual_at, now, self.manual_hold):
+            return "manual"
+        if self.reason == "manual_request":
             return "manual"
         if not self.allow_output:
             return "no_command"
@@ -165,6 +169,8 @@ class TwistGate:
             and not self._fresh(self.estop_at, now, self.estop_timeout)
         ):
             return "stop"
-        if self.reason in ("manual_takeover", "manual_request"):
+        if self.reason not in ("disabled", "output_topic_conflict") and self._fresh(self.manual_at, now, self.manual_hold):
+            return self.manual_source or "local"
+        if self.reason == "manual_request":
             return self.manual_source or "local"
         return "stop"

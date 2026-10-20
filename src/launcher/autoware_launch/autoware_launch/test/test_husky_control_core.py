@@ -109,6 +109,21 @@ class TestHuskyControlCore(unittest.TestCase):
         self.assertEqual((invalid.linear, invalid.angular), (0.0, 0.0))
         self.assertEqual(invalid.state, "invalid_velocity_feedback")
 
+    def test_feedback_does_not_lock_turn_opposite_to_path(self):
+        # A previous saturated right turn must unwind when the path moves left.
+        path = [Waypoint(0.0, 0.3, 0.0, 0.3), Waypoint(5.0, 0.3, 0.0, 0.3)]
+        pose = Pose2D(1.0, 0.0, 0.0)
+        linear, angular = 0.3, -self.limits.max_angular_speed
+        for _ in range(30):
+            target = calculate_command(path, pose, linear, angular, 0.05, self.limits)
+            result = apply_velocity_feedback(
+                target, 0.2, 0.0, linear, angular, 0.05,
+                self.limits, 0.5, 0.5,
+            )
+            self.assertGreaterEqual(result.angular, angular)
+            linear, angular = result.linear, result.angular
+        self.assertGreater(angular, 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()

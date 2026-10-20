@@ -133,6 +133,35 @@ class TestTwistGate(unittest.TestCase):
         controller = gate()
         with self.assertRaises(ValueError):
             controller.manual_takeover(0.0, "unknown")
+        with self.assertRaises(ValueError):
+            controller.request_manual("unknown")
+
+    def test_rviz_manual_mode_selection_preserves_source(self):
+        controller = gate()
+        controller.set_estop(False, 10.0)
+        controller.request_manual("remote")
+        self.assertEqual(controller.operation_mode(10.0), "remote")
+        controller.request_manual()
+        self.assertEqual(controller.operation_mode(10.0), "remote")
+        controller.request_manual("local")
+        self.assertEqual(controller.operation_mode(10.0), "local")
+
+    def test_manual_status_survives_disabled_output_and_command_updates(self):
+        controller = gate(allow_output=False)
+        controller.set_estop(False, 0.0)
+        controller.manual_takeover(0.1, "local")
+        self.assertEqual(controller.mode(0.1), "manual")
+        self.assertEqual(controller.operation_mode(0.1), "local")
+        controller.set_command(1.0, 0.0, 0.2)
+        self.assertEqual(controller.reason, "command_out_of_range")
+        self.assertEqual(controller.mode(0.2), "manual")
+        self.assertEqual(controller.operation_mode(0.2), "local")
+        self.assertEqual(controller.mode(1.2), "no_command")
+        self.assertEqual(controller.operation_mode(1.2), "stop")
+        controller.set_estop(True, 0.3)
+        self.assertEqual(controller.operation_mode(0.3), "stop")
+        controller.disable("disabled")
+        self.assertEqual(controller.mode(0.3), "no_command")
 
     def test_tracking_fault_and_timeout_disengage_autonomy(self):
         controller = gate()

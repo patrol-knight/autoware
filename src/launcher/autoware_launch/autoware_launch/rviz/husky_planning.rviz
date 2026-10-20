@@ -1,11 +1,11 @@
 Panels:
   - Class: rviz_common/Displays
-    Help Height: 72
+    Help Height: 0
     Name: Displays
     Property Tree Widget:
       Expanded: ~
       Splitter Ratio: 0.5
-    Tree Height: 249
+    Tree Height: 149
   - Class: rviz_common/Tool Properties
     Expanded: ~
     Name: Tool Properties
@@ -15,6 +15,10 @@ Panels:
       - /Current View1
     Name: Views
     Splitter Ratio: 0.5
+  - Class: rviz_plugins::AutowareStatePanel
+    Name: AutowareStatePanel
+  - Class: rviz_plugins/ControlModeDisplay
+    Name: ControlModeDisplay
 Visualization Manager:
   Class: ""
   Displays:
@@ -158,11 +162,7 @@ Visualization Manager:
       Enabled: true
       Name: Planned lanelet route
       Namespaces:
-        goal_lanelets: false
-        lane_start_bound: true
-        left_lane_bound: true
-        right_lane_bound: true
-        route_lanelets: false
+        {}
       Topic:
         Depth: 5
         Durability Policy: Transient Local
@@ -322,7 +322,7 @@ Visualization Manager:
       Name: EKF pose (white)
       Shaft Length: 0.6499999761581421
       Shaft Radius: 0.06499999761581421
-      Shape: Arrow
+      Shape: Axes
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -393,7 +393,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0
+      Angle: 0.019999999552965164
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -406,16 +406,20 @@ Visualization Manager:
       Scale: 22.934734344482422
       Target Frame: base_link
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 0
-      Y: 0
+      X: 0.21272310614585876
+      Y: 0.2659185826778412
     Saved: ~
 Window Geometry:
+  AutowareStatePanel:
+    collapsed: false
+  ControlModeDisplay:
+    collapsed: false
   Displays:
     collapsed: false
   Height: 1016
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000001d400000395fc0200000003fb000000100044006900730070006c006100790073010000004200000195000000d200fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007301000001e6000000a50000005500fffffffb0000000a00560069006500770073010000029a0000013d000000a400ffffff000005570000039500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000001d400000395fc0200000005fb000000100044006900730070006c0061007900730100000042000000e9000000d200fffffffb0000001e0054006f006f006c002000500072006f0070006500720074006900650073010000013a0000005e0000005500fffffffb0000000a0056006900650077007301000001a7000000b5000000a400fffffffb00000024004100750074006f00770061007200650053007400610074006500500061006e0065006c010000026b000001070000006700fffffffb000000240043006f006e00740072006f006c004d006f006400650044006900730070006c006100790100000381000000560000005600ffffff000005570000039500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Tool Properties:
     collapsed: false
   Views:

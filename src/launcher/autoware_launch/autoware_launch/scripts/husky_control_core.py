@@ -60,6 +60,15 @@ def _rate_limit(target: float, previous: float, maximum_delta: float) -> float:
     return clamp(target, previous - maximum_delta, previous + maximum_delta)
 
 
+def _preserve_target_progress(wanted: float, target: float, previous: float) -> float:
+    """Do not let feedback undo a rate-limited move toward the path command."""
+    if target > previous:
+        return max(wanted, target)
+    if target < previous:
+        return min(wanted, target)
+    return wanted
+
+
 def apply_velocity_feedback(
     target: Result,
     measured_linear: float,
@@ -86,6 +95,9 @@ def apply_velocity_feedback(
             target.linear + linear_gain * (target.linear - measured_linear),
             0.0, limits.max_linear_speed,
         )
+        wanted_linear = _preserve_target_progress(
+            wanted_linear, target.linear, previous_linear
+        )
         delta = (
             limits.max_linear_accel if wanted_linear >= previous_linear
             else limits.max_linear_decel
@@ -104,6 +116,9 @@ def apply_velocity_feedback(
             wanted_angular = clamp(wanted_angular, 0.0, limits.max_angular_speed)
         else:
             wanted_angular = clamp(wanted_angular, -limits.max_angular_speed, 0.0)
+        wanted_angular = _preserve_target_progress(
+            wanted_angular, target.angular, previous_angular
+        )
         angular = clamp(
             _rate_limit(
                 wanted_angular, previous_angular, limits.max_angular_accel * dt

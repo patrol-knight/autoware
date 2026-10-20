@@ -9,6 +9,8 @@ fi
 WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT_BAG_PATH="${1:-control_bag_$(date +%Y%m%d_%H%M%S)}"
 source "$WORKSPACE/husky_control.conf"
+RMW_IMPLEMENTATION="$HUSKY_RMW_IMPLEMENTATION"
+export RMW_IMPLEMENTATION
 
 set +u
 source /opt/ros/humble/setup.bash
@@ -16,6 +18,7 @@ source "$WORKSPACE/install/setup.bash"
 set -u
 
 echo "Recording Husky control topics to $OUTPUT_BAG_PATH"
+echo "ROS middleware: $RMW_IMPLEMENTATION"
 echo "Platform command topic: $HUSKY_CMD_VEL_TOPIC"
 echo "Press Ctrl+C to finish the bag."
 
@@ -23,7 +26,11 @@ echo "Press Ctrl+C to finish the bag."
 # localization and wheel-odometry feedback for latency and tracking analysis.
 # Topics that are not published yet (such as the vehicle bridge) may be absent.
 exec ros2 bag record -o "$OUTPUT_BAG_PATH" \
+  /planning/mission_planning/goal \
+  /planning/mission_planning/route \
+  /planning/route_state \
   /planning/trajectory \
+  /planning/scenario_planning/scenario_selector/trajectory \
   /planning/scenario_planning/velocity_smoother/trajectory \
   /localization/kinematic_state \
   /control/husky/cmd_vel \
@@ -33,6 +40,7 @@ exec ros2 bag record -o "$OUTPUT_BAG_PATH" \
   /control/command/control_cmd \
   "$HUSKY_CMD_VEL_TOPIC" \
   "$HUSKY_ROBOT_NAMESPACE/platform/cmd_vel_unstamped" \
+  "$HUSKY_ROBOT_NAMESPACE/joystick/joy" \
   "$HUSKY_ROBOT_NAMESPACE/joy_teleop/cmd_vel" \
   "$HUSKY_ROBOT_NAMESPACE/rc_teleop/cmd_vel" \
   "$HUSKY_ROBOT_NAMESPACE/twist_marker_server/cmd_vel" \
@@ -41,6 +49,7 @@ exec ros2 bag record -o "$OUTPUT_BAG_PATH" \
   "$HUSKY_ROBOT_NAMESPACE/platform/odom/filtered" \
   /vehicle/status/control_mode \
   /vehicle/status/velocity_status \
+  /system/operation_mode/state \
   /tf \
   /tf_static \
   /diagnostics \

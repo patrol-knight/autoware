@@ -7,6 +7,8 @@ from math import isfinite
 
 import rclpy
 from autoware_adapi_v1_msgs.msg import OperationModeState
+from autoware_adapi_v1_msgs.srv import ChangeOperationMode
+from autoware_planning_msgs.msg import RouteState
 from autoware_vehicle_msgs.msg import ControlModeReport, VelocityReport
 from autoware_vehicle_msgs.srv import ControlModeCommand
 from geometry_msgs.msg import Twist
@@ -28,7 +30,7 @@ class HuskyTwistVehicleInterface(Node):
             "husky_twist_vehicle_interface", parameter_overrides=parameter_overrides
         )
         self.declare_parameter("input_topic", "/control/husky/cmd_vel")
-        self.declare_parameter("output_topic", "/cmd_vel")
+        self.declare_parameter("output_topic", "/husky/cmd_vel")
         self.declare_parameter("estop_topic", "/husky/platform/emergency_stop")
         self.declare_parameter("odometry_topic", "/husky/platform/odom/filtered")
         self.declare_parameter("velocity_frame_id", "base_link")
@@ -41,9 +43,11 @@ class HuskyTwistVehicleInterface(Node):
             "/husky/twist_marker_server/cmd_vel",
         ])
         self.declare_parameter("remote_manual_topics", [
+            "/husky/joy_teleop/cmd_vel",
             "/husky/rc_teleop/cmd_vel",
         ])
         self.declare_parameter("allow_platform_output", False)
+        self.declare_parameter("rviz_operation_mode_api", False)
         self.declare_parameter("command_timeout_s", 0.25)
         self.declare_parameter("estop_timeout_s", 2.0)
         self.declare_parameter("manual_hold_s", 1.0)
@@ -110,12 +114,41 @@ class HuskyTwistVehicleInterface(Node):
             "/system/operation_mode/state",
             QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL),
         )
+        self.rviz_operation_mode_api = bool(
+            self.get_parameter("rviz_operation_mode_api").value
+        )
+        self.api_operation_mode_pub = None
+        if self.rviz_operation_mode_api:
+            self.api_operation_mode_pub = self.create_publisher(
+                OperationModeState,
+                "/api/operation_mode/state",
+                QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL),
+            )
+            for service_name, callback in (
+                ("change_to_autonomous", self.on_api_autonomous),
+                ("change_to_stop", self.on_api_stop),
+                ("change_to_local", self.on_api_local),
+                ("change_to_remote", self.on_api_remote),
+                ("enable_autoware_control", self.on_api_autonomous),
+                ("disable_autoware_control", self.on_api_disable),
+            ):
+                self.create_service(
+                    ChangeOperationMode,
+                    f"/api/operation_mode/{service_name}",
+                    callback,
+                )
         self.create_subscription(Twist, input_topic, self.on_command, 10)
         self.create_subscription(Bool, estop_topic, self.on_estop, qos_profile_sensor_data)
         self.create_subscription(
             Odometry, odometry_topic, self.on_odometry, qos_profile_sensor_data
         )
         self.create_subscription(String, tracking_state_topic, self.on_tracking, 10)
+        self.route_state_sub = self.create_subscription(
+            RouteState,
+            "/planning/route_state",
+            self.on_route_state,
+            QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL),
+        )
         self.manual_subs = [
             self.create_subscription(
                 Twist, topic,
@@ -214,6 +247,8 @@ class HuskyTwistVehicleInterface(Node):
         operation.is_local_mode_available = bool(self.local_manual_topics)
         operation.is_remote_mode_available = bool(self.remote_manual_topics)
         self.operation_mode_pub.publish(operation)
+        if self.api_operation_mode_pub is not None:
+            self.api_operation_mode_pub.publish(operation)
 
     def on_odometry(self, msg):
         if msg.child_frame_id != self.velocity_frame_id:
@@ -262,6 +297,11 @@ class HuskyTwistVehicleInterface(Node):
         self._publish_state()
         self._publish_control_mode(time.monotonic())
 
+    def on_route_state(self, msg):
+        if msg.state == RouteState.ARRIVED and self.gate.enabled:
+            self.get_logger().info("Route arrived; switching Husky to Local mode")
+            self._request_manual_mode("local")
+
     def on_estop(self, msg):
         was_enabled = self.gate.enabled
         self.gate.set_estop(bool(msg.data), time.monotonic())
@@ -293,14 +333,51 @@ class HuskyTwistVehicleInterface(Node):
         return success, reason
 
     def _request_disable(self, reason):
-        was_enabled = (
-            self.gate.request_manual() if reason == "manual_request"
-            else self.gate.disable(reason)
-        )
+        if reason == "manual_request":
+            source = self.gate.manual_source or (
+                "remote" if self.remote_manual_topics else "local"
+            )
+            self._request_manual_mode(source)
+            return
+        was_enabled = self.gate.disable(reason)
         if was_enabled:
             self._queue_stop()
         self._publish_state()
         self._publish_control_mode(time.monotonic())
+
+    def _request_manual_mode(self, source=None):
+        was_enabled = self.gate.request_manual(source)
+        if was_enabled:
+            self._queue_stop()
+        self._publish_state()
+        self._publish_control_mode(time.monotonic())
+
+    @staticmethod
+    def _api_response(response, success, message):
+        response.status.success = success
+        response.status.code = 0 if success else ChangeOperationMode.Response.ERROR_NOT_AVAILABLE
+        response.status.message = message
+        return response
+
+    def on_api_autonomous(self, _request, response):
+        success, reason = self._request_enable()
+        return self._api_response(response, success, reason)
+
+    def on_api_stop(self, _request, response):
+        self._request_disable("disabled")
+        return self._api_response(response, True, "autonomous control disabled")
+
+    def on_api_local(self, _request, response):
+        self._request_manual_mode("local")
+        return self._api_response(response, True, "local manual mode")
+
+    def on_api_remote(self, _request, response):
+        self._request_manual_mode("remote")
+        return self._api_response(response, True, "remote manual mode")
+
+    def on_api_disable(self, _request, response):
+        self._request_disable("manual_request")
+        return self._api_response(response, True, "autonomous control disabled")
 
     def on_enable_request(self, request, response):
         if request.data:

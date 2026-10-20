@@ -24,6 +24,13 @@ exec ros2 bag record -o "$OUTPUT_BAG_PATH" \
   /fixposition/fpa/corrimu \
   "$HUSKY_ROBOT_NAMESPACE/platform/odom" \
   "$HUSKY_ROBOT_NAMESPACE/platform/odom/filtered" \
+  "$HUSKY_ROBOT_NAMESPACE/joy_teleop/joy" \
+  "$HUSKY_ROBOT_NAMESPACE/joy_teleop/cmd_vel" \
+  "$HUSKY_ROBOT_NAMESPACE/rc_teleop/cmd_vel" \
+  "$HUSKY_ROBOT_NAMESPACE/twist_marker_server/cmd_vel" \
+  "$HUSKY_CMD_VEL_TOPIC" \
+  "$HUSKY_ROBOT_NAMESPACE/platform/cmd_vel_unstamped" \
+  "$HUSKY_ROBOT_NAMESPACE/platform/emergency_stop" \
   /sensing/imu/imu_data \
   /sensing/vehicle_velocity_converter/twist_with_covariance \
   /vehicle/status/velocity_status \
@@ -35,9 +42,11 @@ exec ros2 bag record -o "$OUTPUT_BAG_PATH" \
   /localization/pose_twist_fusion_filter/pose \
   /localization/pose_with_covariance \
   /localization/kinematic_state \
+  /localization/initialization_state \
   /localization/twist_estimator/twist_with_covariance \
   /planning/mission_planning/goal \
   /planning/mission_planning/route \
+  /planning/route_state \
   /planning/scenario_planning/velocity_smoother/trajectory \
   /planning/trajectory \
   /control/husky/cmd_vel \

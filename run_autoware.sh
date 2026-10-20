@@ -2,7 +2,17 @@
 set -euo pipefail
 
 WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MAP_PATH="${MAP_PATH:-/home/teame/husky/map}"
+source "$WORKSPACE/husky_control.conf"
+HUSKY_LAUNCH_GNSS_POSER="${HUSKY_LAUNCH_GNSS_POSER:-false}"
+HUSKY_RVIZ_MODE_API="${HUSKY_RVIZ_MODE_API:-true}"
+for launch_arg in "$@"; do
+  if [[ "$launch_arg" == "launch_api:=true" ]]; then
+    HUSKY_RVIZ_MODE_API=false
+  fi
+done
+RMW_IMPLEMENTATION="$HUSKY_RMW_IMPLEMENTATION"
+export HUSKY_CMD_VEL_TOPIC HUSKY_ROBOT_NAMESPACE HUSKY_ALLOW_PLATFORM_OUTPUT HUSKY_LAUNCH_GNSS_POSER HUSKY_RVIZ_MODE_API RMW_IMPLEMENTATION
+MAP_PATH="${MAP_PATH:-/home/teame/husky/map/lab}"
 # Autoware loads vehicle and sensor configuration for both sensing and localization.
 VEHICLE_MODEL="${VEHICLE_MODEL:-husky_vehicle}"
 SENSOR_MODEL="${SENSOR_MODEL:-husky_sensor_kit}"
@@ -49,25 +59,29 @@ set -u
 
 echo "Starting autoware.launch.xml with Husky vehicle and sensor models."
 echo "Vehicle model: $VEHICLE_MODEL; sensor model: $SENSOR_MODEL."
+echo "ROS middleware: $RMW_IMPLEMENTATION."
+echo "Husky GNSS initialization: $HUSKY_LAUNCH_GNSS_POSER."
+echo "Husky RViz operation-mode API: $HUSKY_RVIZ_MODE_API."
 
 exec ros2 launch autoware_launch autoware.launch.xml \
   map_path:="$MAP_PATH" \
   vehicle_model:="$VEHICLE_MODEL" \
   sensor_model:="$SENSOR_MODEL" \
-  system_run_mode:=logging_simulation \
+  system_run_mode:=online \
   launch_vehicle:=true \
-  launch_vehicle_interface:=false \
+  launch_vehicle_interface:=true \
   launch_system:=false \
   launch_map:=true \
   launch_sensing:=true \
-  launch_sensing_driver:=false \
+  launch_sensing_driver:=true \
   launch_localization:=true \
-  localization_gnss_enabled:=false \
+  localization_gnss_enabled:="$HUSKY_LAUNCH_GNSS_POSER" \
   launch_perception:=false \
   launch_planning:=true \
   planning_module_preset:=husky_no_perception \
+  control_module_preset:=husky_no_perception \
   launch_planning_test_adaptors:=true \
-  launch_control:=false \
+  launch_control:=true \
   launch_api:=false \
   launch_system_monitor:=false \
   launch_dummy_diag_publisher:=false \
@@ -75,5 +89,5 @@ exec ros2 launch autoware_launch autoware.launch.xml \
   rviz:=true \
   rviz_config_name:=husky_planning.rviz \
   rviz_respawn:=false \
-  use_sim_time:=true \
+  use_sim_time:=false \
   "$@"
