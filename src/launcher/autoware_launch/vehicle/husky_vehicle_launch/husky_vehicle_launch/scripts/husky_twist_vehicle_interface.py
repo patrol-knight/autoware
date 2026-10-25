@@ -55,6 +55,9 @@ class HuskyTwistVehicleInterface(Node):
         self.declare_parameter("max_angular_speed", 1.0)
         self.declare_parameter("publish_rate_hz", 20.0)
         self.declare_parameter("stop_publish_duration_s", 0.6)
+        self.declare_parameter("obstacle_stop_topic", "/sensing/lidar/obstacle_stop")
+        self.declare_parameter("obstacle_timeout_s", 1.5)
+        self.declare_parameter("require_obstacle_status", False)
 
         input_topic = str(self.get_parameter("input_topic").value)
         output_topic = str(self.get_parameter("output_topic").value)
@@ -100,6 +103,12 @@ class HuskyTwistVehicleInterface(Node):
         self.stop_until = None
         self.last_state = None
         self.output_topic = output_topic
+        self.require_obstacle_status = bool(self.get_parameter("require_obstacle_status").value)
+        self.obstacle_timeout = float(self.get_parameter("obstacle_timeout_s").value)
+        if self.obstacle_timeout <= 0.0:
+            raise ValueError("Obstacle timeout must be positive")
+        self.obstacle_stop = True
+        self.obstacle_at = None
 
         self.output_pub = self.create_publisher(Twist, output_topic, 10)
         self.state_pub = self.create_publisher(String, "/control/husky/bridge_state", 10)
@@ -139,6 +148,10 @@ class HuskyTwistVehicleInterface(Node):
                 )
         self.create_subscription(Twist, input_topic, self.on_command, 10)
         self.create_subscription(Bool, estop_topic, self.on_estop, qos_profile_sensor_data)
+        self.create_subscription(
+            Bool, str(self.get_parameter("obstacle_stop_topic").value),
+            self.on_obstacle_stop, 10,
+        )
         self.create_subscription(
             Odometry, odometry_topic, self.on_odometry, qos_profile_sensor_data
         )
@@ -308,6 +321,21 @@ class HuskyTwistVehicleInterface(Node):
         if was_enabled and not self.gate.enabled:
             self._queue_stop()
 
+    def on_obstacle_stop(self, msg):
+        self.obstacle_stop = bool(msg.data)
+        self.obstacle_at = time.monotonic()
+        if self.obstacle_stop and self.gate.enabled:
+            self.output_pub.publish(Twist())
+
+    def _obstacle_blocked(self, now):
+        if not self.require_obstacle_status:
+            return False
+        return (
+            self.obstacle_at is None
+            or now - self.obstacle_at > self.obstacle_timeout
+            or self.obstacle_stop
+        )
+
     def on_manual(self, _msg, topic):
         was_enabled = self.gate.enabled
         source = "remote" if topic in self.remote_manual_topics else "local"
@@ -411,8 +439,9 @@ class HuskyTwistVehicleInterface(Node):
         command = self.gate.output(now)
         if command is not None:
             message = Twist()
-            message.linear.x = command.linear
-            message.angular.z = command.angular
+            if not self._obstacle_blocked(now):
+                message.linear.x = command.linear
+                message.angular.z = command.angular
             self.output_pub.publish(message)
         elif was_enabled:
             self._queue_stop()

@@ -35,5 +35,8 @@
     <param name="max_angular_speed" value="1.0"/>
     <param name="publish_rate_hz" value="20.0"/>
     <param name="stop_publish_duration_s" value="0.6"/>
+    <param name="require_obstacle_status" value="true"/>
+    <param name="obstacle_stop_topic" value="/sensing/lidar/obstacle_stop"/>
+    <param name="obstacle_timeout_s" value="1.5"/>
   </node>
 </launch>

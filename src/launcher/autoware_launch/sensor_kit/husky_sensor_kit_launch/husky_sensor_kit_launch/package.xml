@@ -9,6 +9,7 @@
   <exec_depend>autoware_gnss_poser</exec_depend>
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>autoware_pointcloud_preprocessor</exec_depend>
+  <exec_depend>autoware_launch</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>fixposition_driver_msgs</exec_depend>
   <exec_depend>husky_sensor_kit_description</exec_depend>
@@ -21,6 +22,9 @@
   <exec_depend>rclpy</exec_depend>
   <exec_depend>rclcpp_components</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>sensor_msgs_py</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>tier4_vehicle_launch</exec_depend>
   <exec_depend>xacro</exec_depend>

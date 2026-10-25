@@ -1,0 +1,19 @@
+/**:
+  ros__parameters:
+    input_topic: /sensing/lidar/concatenated/pointcloud
+    sensor_frame: velodyne
+    detection_fps: 2.0
+
+    # VLP-16 range-image layout. Ring/channel 0 has the lowest elevation.
+    num_scans: 16
+    horizon_scan: 1800
+    ground_scan_index: 7
+
+    # Adjacent-ring ground classification, in degrees.
+    sensor_mount_angle_deg: 0.0
+    ground_angle_tolerance_deg: 10.0
+
+    # Front obstacle region: -half_angle_deg to +half_angle_deg.
+    max_range_m: 2.0
+    half_angle_deg: 60.0
+    point_threshold: 30

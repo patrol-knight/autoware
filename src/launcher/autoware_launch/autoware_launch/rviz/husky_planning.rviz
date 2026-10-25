@@ -3,7 +3,9 @@ Panels:
     Help Height: 0
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /Ground Cloud1/Topic1
+        - /Nonground Cloud1/Topic1
       Splitter Ratio: 0.5
     Tree Height: 149
   - Class: rviz_common/Tool Properties
@@ -278,12 +280,7 @@ Visualization Manager:
       Enabled: true
       Name: Monte Carlo candidate poses
       Namespaces:
-        initial_pose_index_color_marker: false
-        initial_pose_iteration_color_marker: false
-        initial_pose_transform_probability_color_marker: true
-        result_pose_index_color_marker: false
-        result_pose_iteration_color_marker: false
-        result_pose_transform_probability_color_marker: true
+        {}
       Topic:
         Depth: 10
         Durability Policy: Volatile
@@ -348,6 +345,74 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /localization/pose_twist_fusion_filter/pose
       Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: ""
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: Ground Cloud
+      Position Transformer: ""
+      Selectable: true
+      Size (Pixels): 2
+      Size (m): 0.009999999776482582
+      Style: Points
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /sensing/lidar/ground/pointcloud
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: ""
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: Nonground Cloud
+      Position Transformer: ""
+      Selectable: true
+      Size (Pixels): 2
+      Size (m): 0.009999999776482582
+      Style: Points
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /sensing/lidar/nonground/pointcloud
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
