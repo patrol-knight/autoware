@@ -3,7 +3,6 @@ set -euo pipefail
 
 WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$WORKSPACE/husky_control.conf"
-HUSKY_LAUNCH_GNSS_POSER="${HUSKY_LAUNCH_GNSS_POSER:-false}"
 HUSKY_RVIZ_MODE_API="${HUSKY_RVIZ_MODE_API:-true}"
 for launch_arg in "$@"; do
   if [[ "$launch_arg" == "launch_api:=true" ]]; then
@@ -11,7 +10,7 @@ for launch_arg in "$@"; do
   fi
 done
 RMW_IMPLEMENTATION="$HUSKY_RMW_IMPLEMENTATION"
-export HUSKY_CMD_VEL_TOPIC HUSKY_ROBOT_NAMESPACE HUSKY_ALLOW_PLATFORM_OUTPUT HUSKY_LAUNCH_GNSS_POSER HUSKY_RVIZ_MODE_API RMW_IMPLEMENTATION
+export HUSKY_CMD_VEL_TOPIC HUSKY_ROBOT_NAMESPACE HUSKY_ALLOW_PLATFORM_OUTPUT HUSKY_RVIZ_MODE_API RMW_IMPLEMENTATION
 MAP_PATH="${MAP_PATH:-/home/teame/husky/map/lab}"
 # Autoware loads vehicle and sensor configuration for both sensing and localization.
 VEHICLE_MODEL="${VEHICLE_MODEL:-husky_vehicle}"
@@ -60,7 +59,6 @@ set -u
 echo "Starting autoware.launch.xml with Husky vehicle and sensor models."
 echo "Vehicle model: $VEHICLE_MODEL; sensor model: $SENSOR_MODEL."
 echo "ROS middleware: $RMW_IMPLEMENTATION."
-echo "Husky GNSS initialization: $HUSKY_LAUNCH_GNSS_POSER."
 echo "Husky RViz operation-mode API: $HUSKY_RVIZ_MODE_API."
 
 exec ros2 launch autoware_launch autoware.launch.xml \
@@ -75,12 +73,14 @@ exec ros2 launch autoware_launch autoware.launch.xml \
   launch_sensing:=true \
   launch_sensing_driver:=true \
   launch_localization:=true \
-  localization_gnss_enabled:="$HUSKY_LAUNCH_GNSS_POSER" \
+  localization_gnss_enabled:=false \
   launch_perception:=false \
   launch_planning:=true \
   planning_module_preset:=husky_no_perception \
   control_module_preset:=husky_no_perception \
   launch_planning_test_adaptors:=true \
+  launch_robot_state:=true \
+  enable_auto_with_route:=true \
   launch_control:=true \
   launch_api:=false \
   launch_system_monitor:=false \

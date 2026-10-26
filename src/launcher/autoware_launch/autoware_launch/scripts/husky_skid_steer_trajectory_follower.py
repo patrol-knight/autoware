@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """Body-velocity trajectory follower for a skid-steer Husky.
 
-The output is an internal Twist topic. A separate, explicitly armed vehicle
-interface decides whether this command reaches the Clearpath platform.
+The output is an internal Twist topic. A separate vehicle interface decides
+whether this command reaches the Clearpath platform.
 """
 
 from math import atan2, cos, isfinite, sin
 
 import rclpy
-from autoware_planning_msgs.msg import Trajectory, TrajectoryPoint
+from autoware_planning_msgs.msg import RouteState, Trajectory, TrajectoryPoint
 from autoware_vehicle_msgs.msg import VelocityReport
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from rclpy.time import Time
 from std_msgs.msg import String
 
@@ -83,6 +83,7 @@ class HuskySkidSteerTrajectoryFollower(Node):
             raise ValueError("Lookahead and speed/acceleration limits must be positive")
 
         self.trajectory = None
+        self.route_state = None
         self.odometry = None
         self.velocity_report = None
         self.previous_linear = 0.0
@@ -98,6 +99,10 @@ class HuskySkidSteerTrajectoryFollower(Node):
         self.trajectory_sub = self.create_subscription(
             Trajectory, "/planning/trajectory", self.on_trajectory, 10
         )
+        self.create_subscription(
+            RouteState, "/planning/route_state", self.on_route_state,
+            QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL),
+        )
         self.odometry_sub = self.create_subscription(
             Odometry, "/localization/kinematic_state", self.on_odometry, qos_profile_sensor_data
         )
@@ -108,7 +113,14 @@ class HuskySkidSteerTrajectoryFollower(Node):
         self.get_logger().info("Husky follower ready: /control/husky/cmd_vel")
 
     def on_trajectory(self, msg):
-        self.trajectory = msg
+        if self.route_state == RouteState.SET:
+            self.trajectory = msg
+
+    def on_route_state(self, msg):
+        self.route_state = msg.state
+        if msg.state != RouteState.SET:
+            self.trajectory = None
+            self.publish_stop("route_not_active")
 
     def on_odometry(self, msg):
         self.odometry = msg
@@ -164,6 +176,9 @@ class HuskySkidSteerTrajectoryFollower(Node):
         self.prediction_pub.publish(prediction)
 
     def on_timer(self):
+        if self.route_state != RouteState.SET:
+            self.publish_stop("route_not_active")
+            return
         now = self.get_clock().now()
         if self.last_tick is None:
             dt = self.timer.timer_period_ns / 1e9

@@ -7,7 +7,7 @@ launch:
       default: husky_skid_steer
 
   # The stock container consumes steering-angle Control messages. Husky uses
-  # the separately armed Twist bridge and its ControlModeCommand service.
+# the gated Twist bridge and its ControlModeCommand service.
   - arg:
       name: launch_standard_control_container
       default: "false"

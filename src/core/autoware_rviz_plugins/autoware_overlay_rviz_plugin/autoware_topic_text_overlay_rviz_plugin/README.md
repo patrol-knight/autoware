@@ -12,6 +12,7 @@ overlay block is labeled by its topic name.
 
 The panel supports the following topic types:
 
+- `std_msgs/msg/String`
 - `autoware_internal_debug_msgs/msg/StringStamped`
 - `autoware_internal_debug_msgs/msg/BoolStamped`
 - `autoware_internal_debug_msgs/msg/Float32Stamped`

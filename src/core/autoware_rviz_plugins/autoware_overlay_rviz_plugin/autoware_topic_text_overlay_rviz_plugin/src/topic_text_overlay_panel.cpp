@@ -40,6 +40,7 @@
 #include <autoware_internal_debug_msgs/msg/int64_multi_array_stamped.hpp>
 #include <autoware_internal_debug_msgs/msg/int64_stamped.hpp>
 #include <autoware_internal_debug_msgs/msg/string_stamped.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
@@ -58,6 +59,7 @@ namespace autoware::topic_text_overlay_rviz_plugin
 {
 namespace
 {
+constexpr const char * string_type = "std_msgs/msg/String";
 constexpr const char * autoware_string_stamped_type =
   "autoware_internal_debug_msgs/msg/StringStamped";
 constexpr const char * bool_stamped_type = "autoware_internal_debug_msgs/msg/BoolStamped";
@@ -369,6 +371,10 @@ void TopicTextOverlayPanel::save(rviz_common::Config config) const
 
 bool TopicTextOverlayPanel::is_supported_topic_type(const std::string & type_name, TopicKind & kind)
 {
+  if (type_name == string_type) {
+    kind = TopicKind::String;
+    return true;
+  }
   if (type_name == autoware_string_stamped_type) {
     kind = TopicKind::AutowareStringStamped;
     return true;
@@ -423,6 +429,8 @@ bool TopicTextOverlayPanel::is_supported_topic_type(const std::string & type_nam
 std::string TopicTextOverlayPanel::display_type_name(const TopicKind kind)
 {
   switch (kind) {
+    case TopicKind::String:
+      return "String";
     case TopicKind::AutowareStringStamped:
       return "StringStamped";
     case TopicKind::BoolStamped:
@@ -651,6 +659,12 @@ void TopicTextOverlayPanel::subscribe_topic(const std::string & topic, TopicStat
 {
   const auto qos = rclcpp::QoS(rclcpp::KeepLast(10)).best_effort().durability_volatile();
   switch (state.kind) {
+    case TopicKind::String:
+      state.subscription = raw_node_->create_subscription<std_msgs::msg::String>(
+        topic, qos, [this, topic](const std_msgs::msg::String::ConstSharedPtr msg) {
+          set_topic_text(topic, msg->data);
+        });
+      break;
     case TopicKind::AutowareStringStamped:
       state.subscription =
         raw_node_->create_subscription<autoware_internal_debug_msgs::msg::StringStamped>(

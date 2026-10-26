@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Explicitly armed Husky Twist bridge with manual and E-stop interlocks."""
+"""Husky Twist bridge with route auto-enable, manual, and E-stop interlocks."""
 
 import signal
 import time
@@ -8,11 +8,12 @@ from math import isfinite
 import rclpy
 from autoware_adapi_v1_msgs.msg import OperationModeState
 from autoware_adapi_v1_msgs.srv import ChangeOperationMode
-from autoware_planning_msgs.msg import RouteState
+from autoware_planning_msgs.msg import RouteState, Trajectory
 from autoware_vehicle_msgs.msg import ControlModeReport, VelocityReport
 from autoware_vehicle_msgs.srv import ControlModeCommand
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from rcl_interfaces.msg import SetParametersResult
 from rclpy.clock import Clock, ClockType
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
@@ -47,6 +48,7 @@ class HuskyTwistVehicleInterface(Node):
             "/husky/rc_teleop/cmd_vel",
         ])
         self.declare_parameter("allow_platform_output", False)
+        self.declare_parameter("enable_auto_with_route", False)
         self.declare_parameter("rviz_operation_mode_api", False)
         self.declare_parameter("command_timeout_s", 0.25)
         self.declare_parameter("estop_timeout_s", 2.0)
@@ -109,6 +111,14 @@ class HuskyTwistVehicleInterface(Node):
             raise ValueError("Obstacle timeout must be positive")
         self.obstacle_stop = True
         self.obstacle_at = None
+        self.enable_auto_with_route = bool(self.get_parameter("enable_auto_with_route").value)
+        self.add_on_set_parameters_callback(self.on_parameters)
+        self.route_state = None
+        self.route_stamp_ns = None
+        self.auto_started_for_route = False
+        self.auto_blocked_for_route = False
+        self.auto_trajectory = None
+        self.auto_trajectory_at = None
 
         self.output_pub = self.create_publisher(Twist, output_topic, 10)
         self.state_pub = self.create_publisher(String, "/control/husky/bridge_state", 10)
@@ -162,6 +172,9 @@ class HuskyTwistVehicleInterface(Node):
             self.on_route_state,
             QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL),
         )
+        self.trajectory_sub = self.create_subscription(
+            Trajectory, "/planning/trajectory", self.on_trajectory, 10
+        )
         self.manual_subs = [
             self.create_subscription(
                 Twist, topic,
@@ -180,7 +193,8 @@ class HuskyTwistVehicleInterface(Node):
         )
         self.get_logger().info(
             f"Husky bridge ready: {input_topic} -> {output_topic}; "
-            f"platform output {'available' if allow_output else 'inhibited'}; starts disabled"
+            f"platform output {'available' if allow_output else 'inhibited'}; starts disabled; "
+            f"auto with route {'enabled' if self.enable_auto_with_route else 'disabled'}"
         )
 
     def _simulated_time_active(self):
@@ -188,6 +202,19 @@ class HuskyTwistVehicleInterface(Node):
             self.has_parameter("use_sim_time")
             and self.get_parameter("use_sim_time").value
         )
+
+    def on_parameters(self, parameters):
+        for parameter in parameters:
+            if parameter.name != "enable_auto_with_route":
+                continue
+            if not isinstance(parameter.value, bool):
+                return SetParametersResult(successful=False, reason="enable_auto_with_route must be bool")
+            self.enable_auto_with_route = parameter.value
+            if not parameter.value:
+                self.auto_blocked_for_route = True
+                if self.gate.enabled:
+                    self._request_disable("route_failure")
+        return SetParametersResult(successful=True)
 
     def _inhibit_if_simulated(self):
         if self.gate.allow_output and self._simulated_time_active():
@@ -311,11 +338,89 @@ class HuskyTwistVehicleInterface(Node):
         self._publish_control_mode(time.monotonic())
 
     def on_route_state(self, msg):
+        previous_state = self.route_state
+        self.route_state = msg.state
+        if msg.state == RouteState.SET and previous_state != RouteState.SET:
+            self.route_stamp_ns = msg.stamp.sec * 1_000_000_000 + msg.stamp.nanosec
+            self.auto_started_for_route = self.gate.enabled
+            self.auto_blocked_for_route = (
+                self.gate.estop is True or not self.enable_auto_with_route
+            )
+            self.auto_trajectory = None
+            self.auto_trajectory_at = None
+        elif msg.state in (RouteState.ARRIVED, RouteState.ABORTED, RouteState.UNSET):
+            self.auto_trajectory = None
+            self.auto_trajectory_at = None
         if msg.state == RouteState.ARRIVED and self.gate.enabled:
             self.get_logger().info("Route arrived; switching Husky to Local mode")
             self._request_manual_mode("local")
+        elif msg.state in (RouteState.UNSET, RouteState.ABORTED, RouteState.INTERRUPTED) and self.gate.enabled:
+            self.get_logger().warn("Active route ended; stopping autonomous control")
+            self._request_disable("route_not_active")
+
+    def on_trajectory(self, msg):
+        self.auto_trajectory = None
+        self.auto_trajectory_at = None
+        if not msg.header.frame_id or len(msg.points) < 2:
+            return
+        if not all(isfinite(value) for point in msg.points for value in (
+            point.pose.position.x, point.pose.position.y,
+            point.pose.orientation.x, point.pose.orientation.y,
+            point.pose.orientation.z, point.pose.orientation.w,
+            point.longitudinal_velocity_mps,
+        )):
+            return
+        first = msg.points[0].pose.position
+        if not any(
+            abs(point.pose.position.x - first.x) > 1e-3
+            or abs(point.pose.position.y - first.y) > 1e-3
+            for point in msg.points[1:]
+        ):
+            return
+        self.auto_trajectory = msg
+        self.auto_trajectory_at = time.monotonic()
+
+    def _maybe_auto_enable(self):
+        if (
+            not self.enable_auto_with_route
+            or self.route_state != RouteState.SET
+            or self.auto_started_for_route
+            or self.auto_blocked_for_route
+            or self.gate.enabled
+            or self.auto_trajectory is None
+            or not self.gate.allow_output
+            or self._simulated_time_active()
+        ):
+            return
+        now = time.monotonic()
+        trajectory = self.auto_trajectory
+        stamp_ns = trajectory.header.stamp.sec * 1_000_000_000 + trajectory.header.stamp.nanosec
+        if self.route_stamp_ns is None or stamp_ns < self.route_stamp_ns or stamp_ns == 0:
+            return
+        age = (self.get_clock().now() - Time.from_msg(trajectory.header.stamp)).nanoseconds / 1e9
+        if age < -0.2 or age > 0.7:
+            return
+        if (
+            self.gate.tracking_state not in ("track", "align_path", "align_goal")
+            or self.gate.tracking_at is None
+            or self.gate.tracking_at < self.auto_trajectory_at
+            or self.gate.command_at is None
+            or self.gate.command_at < self.auto_trajectory_at
+            or self.gate._block_reason(now) is not None
+            or self._obstacle_blocked(now)
+            or self._other_output_publisher_present()
+        ):
+            return
+        success, reason = self._request_enable()
+        if success:
+            self.auto_started_for_route = True
+            self.get_logger().info("Valid route and trajectory; autonomous control enabled")
+        else:
+            self.get_logger().warn(f"Automatic route enable rejected: {reason}")
 
     def on_estop(self, msg):
+        if msg.data:
+            self.auto_blocked_for_route = True
         was_enabled = self.gate.enabled
         self.gate.set_estop(bool(msg.data), time.monotonic())
         if was_enabled and not self.gate.enabled:
@@ -337,6 +442,7 @@ class HuskyTwistVehicleInterface(Node):
         )
 
     def on_manual(self, _msg, topic):
+        self.auto_blocked_for_route = True
         was_enabled = self.gate.enabled
         source = "remote" if topic in self.remote_manual_topics else "local"
         self.gate.manual_takeover(time.monotonic(), source)
@@ -354,6 +460,8 @@ class HuskyTwistVehicleInterface(Node):
             success, reason = self.gate.enable(time.monotonic())
         if success:
             self.stop_until = None
+            if self.route_state == RouteState.SET:
+                self.auto_started_for_route = True
         if was_enabled and not self.gate.enabled:
             self._queue_stop()
         self._publish_state()
@@ -361,6 +469,7 @@ class HuskyTwistVehicleInterface(Node):
         return success, reason
 
     def _request_disable(self, reason):
+        self.auto_blocked_for_route = True
         if reason == "manual_request":
             source = self.gate.manual_source or (
                 "remote" if self.remote_manual_topics else "local"
@@ -374,6 +483,7 @@ class HuskyTwistVehicleInterface(Node):
         self._publish_control_mode(time.monotonic())
 
     def _request_manual_mode(self, source=None):
+        self.auto_blocked_for_route = True
         was_enabled = self.gate.request_manual(source)
         if was_enabled:
             self._queue_stop()
@@ -434,6 +544,7 @@ class HuskyTwistVehicleInterface(Node):
     def on_timer(self):
         self._inhibit_if_simulated()
         self._drop_for_output_conflict()
+        self._maybe_auto_enable()
         now = time.monotonic()
         was_enabled = self.gate.enabled
         command = self.gate.output(now)

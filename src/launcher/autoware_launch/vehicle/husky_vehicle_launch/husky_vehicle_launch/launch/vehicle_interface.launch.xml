@@ -6,6 +6,7 @@
   <arg name="cmd_vel_topic" default="$(env HUSKY_CMD_VEL_TOPIC /husky/cmd_vel)"/>
   <arg name="robot_namespace" default="$(env HUSKY_ROBOT_NAMESPACE /husky)"/>
   <arg name="allow_platform_output" default="$(env HUSKY_ALLOW_PLATFORM_OUTPUT false)"/>
+  <arg name="enable_auto_with_route" default="$(env HUSKY_ENABLE_AUTO_WITH_ROUTE false)"/>
   <!-- Use with launch_api:=false: the Husky bridge serves the RViz operation-mode API. -->
   <arg name="rviz_operation_mode_api" default="$(env HUSKY_RVIZ_MODE_API false)"/>
 
@@ -27,6 +28,7 @@
     <param name="manual_topics" value="['$(var robot_namespace)/joy_teleop/cmd_vel', '$(var robot_namespace)/rc_teleop/cmd_vel', '$(var robot_namespace)/twist_marker_server/cmd_vel']"/>
     <param name="remote_manual_topics" value="['$(var robot_namespace)/joy_teleop/cmd_vel', '$(var robot_namespace)/rc_teleop/cmd_vel']"/>
     <param name="allow_platform_output" value="$(var allow_platform_output)"/>
+    <param name="enable_auto_with_route" value="$(var enable_auto_with_route)"/>
     <param name="rviz_operation_mode_api" value="$(var rviz_operation_mode_api)"/>
     <param name="command_timeout_s" value="0.25"/>
     <param name="estop_timeout_s" value="2.0"/>

@@ -21,6 +21,15 @@ Panels:
     Name: AutowareStatePanel
   - Class: rviz_plugins/ControlModeDisplay
     Name: ControlModeDisplay
+  - Class: autoware_topic_text_overlay_rviz_plugin/TopicTextOverlayPanel
+    Name: Robot Status
+    Enable Overlay: true
+    Left: 40
+    Top: 40
+    Font Size: 24
+    Max Letters: 100
+    Selected Topics:
+      - /robot_status
 Visualization Manager:
   Class: ""
   Displays:

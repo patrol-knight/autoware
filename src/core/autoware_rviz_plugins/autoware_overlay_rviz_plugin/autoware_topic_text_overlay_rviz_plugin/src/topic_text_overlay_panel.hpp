@@ -63,6 +63,7 @@ private Q_SLOTS:
 
 private:
   enum class TopicKind {
+    String,
     AutowareStringStamped,
     BoolStamped,
     Float32Stamped,
