@@ -1,36 +1,31 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
-if [[ $# -gt 1 ]]; then
-  echo "Usage: $0 [OUTPUT_BAG_PATH]" >&2
-  exit 2
-fi
-
-WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUTPUT_BAG_PATH="${1:-autoware_replay_bag_$(date +%Y%m%d_%H%M%S)}"
-source "$WORKSPACE/husky_control.conf"
-
-set +u
+WORKSPACE="/home/teame/husky/autoware"
+source "${WORKSPACE}/husky_control.conf"
 source /opt/ros/humble/setup.bash
-source "$WORKSPACE/install/setup.bash"
-set -u
+source "${WORKSPACE}/install/setup.bash"
+# Output bag name with timestamp
+BAG_NAME="autoware_bag_$(date +%Y%m%d_%H%M%S)"
 
-echo "Recording replay inputs and pipeline outputs to $OUTPUT_BAG_PATH"
-echo "Replay sensor inputs with replay_husky_sensing_bag.sh; do not replay the whole bag into a running Autoware stack."
-# Keep the original LiDAR cloud for sensing replay. Processed clouds are
-# regenerated and would duplicate most of the bag's storage cost.
-exec ros2 bag record -o "$OUTPUT_BAG_PATH" \
+echo "Recording ROS 2 bag: ${BAG_NAME}"
+echo "Press Ctrl+C to stop recording."
+ros2 bag record \
+  -o "${BAG_NAME}" \
   /velodyne_points \
+  /sensing/lidar/obstacle_stop \
+  /sensing/lidar/obstacle_count \
+  /sensing/lidar/obstacle_exe_time_ms \
   /fixposition/fpa/corrimu \
-  "$HUSKY_ROBOT_NAMESPACE/platform/odom" \
-  "$HUSKY_ROBOT_NAMESPACE/platform/odom/filtered" \
-  "$HUSKY_ROBOT_NAMESPACE/joy_teleop/joy" \
-  "$HUSKY_ROBOT_NAMESPACE/joy_teleop/cmd_vel" \
-  "$HUSKY_ROBOT_NAMESPACE/rc_teleop/cmd_vel" \
-  "$HUSKY_ROBOT_NAMESPACE/twist_marker_server/cmd_vel" \
+  /fixposition/gnss1 \
+  "/husky/platform/odom" \
+  "/husky/platform/odom/filtered" \
+  "/husky/joy_teleop/joy" \
+  "/husky/joy_teleop/cmd_vel" \
+  "/husky/rc_teleop/cmd_vel" \
+  "/husky/twist_marker_server/cmd_vel" \
   "$HUSKY_CMD_VEL_TOPIC" \
-  "$HUSKY_ROBOT_NAMESPACE/platform/cmd_vel_unstamped" \
-  "$HUSKY_ROBOT_NAMESPACE/platform/emergency_stop" \
+  "/husky/platform/cmd_vel_unstamped" \
+  "/husky/platform/emergency_stop" \
   /sensing/imu/imu_data \
   /sensing/vehicle_velocity_converter/twist_with_covariance \
   /vehicle/status/velocity_status \
@@ -56,4 +51,7 @@ exec ros2 bag record -o "$OUTPUT_BAG_PATH" \
   /system/operation_mode/state \
   /tf \
   /tf_static \
-  /diagnostics
+  /diagnostics \
+  /cpu_monitor/cpu_usage \
+  /mem_monitor/memory_status \
+  /robot_status

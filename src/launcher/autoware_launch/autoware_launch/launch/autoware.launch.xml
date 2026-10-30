@@ -33,6 +33,7 @@
   <!-- Vehicle -->
   <arg name="vehicle_id" default="$(env VEHICLE_ID default)" description="vehicle specific ID"/>
   <arg name="launch_vehicle_interface" default="true" description="launch vehicle interface"/>
+  <arg name="allow_platform_output" default="false" description="allow the Husky vehicle interface to publish platform commands"/>
   <arg name="enable_auto_with_route" default="$(env HUSKY_ENABLE_AUTO_WITH_ROUTE false)" description="automatically enable Husky autonomous control for a valid route and trajectory"/>
   <!-- Control -->
   <arg name="check_external_emergency_heartbeat" default="false"/>
@@ -73,6 +74,7 @@
   </group>
 
   <!-- Vehicle -->
+  <set_env name="HUSKY_ALLOW_PLATFORM_OUTPUT" value="$(var allow_platform_output)"/>
   <set_env name="HUSKY_ENABLE_AUTO_WITH_ROUTE" value="$(var enable_auto_with_route)"/>
   <group if="$(var launch_vehicle)">
     <include file="$(find-pkg-share tier4_vehicle_launch)/launch/vehicle.launch.xml">

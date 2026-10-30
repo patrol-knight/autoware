@@ -2,7 +2,7 @@
   ros__parameters:
     planning_hz: 10.0
     path_length:
-      backward: 5.0
+      backward: 1.0
       forward: 300.0
     waypoint:
       connection_gradient_from_centerline: 10.0

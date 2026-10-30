@@ -35,7 +35,7 @@ class Waypoint:
 class Limits:
     lookahead_distance: float = 0.6
     max_path_distance: float = 1.0
-    max_linear_speed: float = 0.3
+    max_linear_speed: float = 0.8
     max_angular_speed: float = 0.5
     max_linear_accel: float = 0.3
     max_linear_decel: float = 0.3

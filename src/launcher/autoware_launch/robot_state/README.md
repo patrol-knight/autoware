@@ -3,6 +3,8 @@
 Publishes `/robot_status` as `std_msgs/msg/String`. The publisher uses transient-local QoS so
 late subscribers receive the current status. Start it with `ros2 launch robot_state
 robot_state.launch.py`; the Husky `run_autoware.sh` script also enables it.
+The Husky planning RViz configuration shows the topic in a compact color-coded
+`RobotStatusPanel`.
 The current status is published at 5 Hz and immediately when it changes. `reach` is a
 single arrival event and is not repeated at 5 Hz.
 
@@ -53,5 +55,5 @@ does not produce `reach`.
 Sensor liveness uses the receipt time of `/sensing/lidar/concatenated/pointcloud`
 (`sensor_msgs/msg/PointCloud2`), `/sensing/imu/imu_data` (`sensor_msgs/msg/Imu`),
 and `/husky/platform/odom/filtered` (`nav_msgs/msg/Odometry`). All three must
-arrive within `sensor_timeout_s` (default 1 second); the three topic names are
+arrive within `sensor_timeout_s` (default 2 seconds); the three topic names are
 configurable with `lidar_topic`, `imu_topic`, and `wheel_odometry_topic`.

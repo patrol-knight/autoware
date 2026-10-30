@@ -4,4 +4,9 @@
          base_class_type="rviz_common::Panel">
     <description>Panel for overlaying selected String, StringStamped, Marker, and MarkerArray text topics.</description>
   </class>
+  <class name="autoware_topic_text_overlay_rviz_plugin/RobotStatusPanel"
+         type="autoware::topic_text_overlay_rviz_plugin::RobotStatusPanel"
+         base_class_type="rviz_common::Panel">
+    <description>Compact color-coded panel for the Husky /robot_status topic.</description>
+  </class>
 </library>

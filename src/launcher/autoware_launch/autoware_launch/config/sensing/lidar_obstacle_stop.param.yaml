@@ -15,5 +15,5 @@
 
     # Front obstacle region: -half_angle_deg to +half_angle_deg.
     max_range_m: 2.0
-    half_angle_deg: 60.0
-    point_threshold: 30
+    half_angle_deg: 45.0
+    point_threshold: 40

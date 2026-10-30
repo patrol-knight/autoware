@@ -23,7 +23,7 @@ class RobotState(Node):
     def __init__(self):
         super().__init__("robot_state")
         self.declare_parameter("manual_command_timeout_s", 1.0)
-        self.declare_parameter("sensor_timeout_s", 1.0)
+        self.declare_parameter("sensor_timeout_s", 2.0)
         self.declare_parameter("velocity_timeout_s", 1.0)
         self.declare_parameter("stop_linear_tolerance_mps", 0.01)
         self.declare_parameter("stop_angular_tolerance_radps", 0.01)

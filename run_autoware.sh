@@ -10,8 +10,8 @@ for launch_arg in "$@"; do
   fi
 done
 RMW_IMPLEMENTATION="$HUSKY_RMW_IMPLEMENTATION"
-export HUSKY_CMD_VEL_TOPIC HUSKY_ROBOT_NAMESPACE HUSKY_ALLOW_PLATFORM_OUTPUT HUSKY_RVIZ_MODE_API RMW_IMPLEMENTATION
-MAP_PATH="${MAP_PATH:-/home/teame/husky/map/lab}"
+export HUSKY_CMD_VEL_TOPIC HUSKY_ROBOT_NAMESPACE HUSKY_RVIZ_MODE_API RMW_IMPLEMENTATION
+MAP_PATH="${MAP_PATH:-/home/teame/husky/map/demo}"
 # Autoware loads vehicle and sensor configuration for both sensing and localization.
 VEHICLE_MODEL="${VEHICLE_MODEL:-husky_vehicle}"
 SENSOR_MODEL="${SENSOR_MODEL:-husky_sensor_kit}"
@@ -68,12 +68,13 @@ exec ros2 launch autoware_launch autoware.launch.xml \
   system_run_mode:=online \
   launch_vehicle:=true \
   launch_vehicle_interface:=true \
+  allow_platform_output:=true \
   launch_system:=false \
   launch_map:=true \
   launch_sensing:=true \
   launch_sensing_driver:=true \
   launch_localization:=true \
-  localization_gnss_enabled:=false \
+  localization_gnss_enabled:=true \
   launch_perception:=false \
   launch_planning:=true \
   planning_module_preset:=husky_no_perception \

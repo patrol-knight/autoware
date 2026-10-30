@@ -36,7 +36,7 @@ class HuskySkidSteerTrajectoryFollower(Node):
         self.declare_parameter("max_input_age_s", 0.7)
         self.declare_parameter("lookahead_distance", 0.6)
         self.declare_parameter("max_path_distance", 1.0)
-        self.declare_parameter("max_linear_speed", 0.3)
+        self.declare_parameter("max_linear_speed", 0.8)
         self.declare_parameter("max_angular_speed", 0.5)
         self.declare_parameter("max_linear_accel", 0.3)
         self.declare_parameter("max_linear_decel", 0.3)
