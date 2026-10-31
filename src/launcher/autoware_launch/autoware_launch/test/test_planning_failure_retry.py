@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import rclpy
 from autoware_adapi_v1_msgs.srv import SetRoutePoints
-from autoware_planning_msgs.msg import RouteState
+from autoware_planning_msgs.msg import RouteState, Trajectory
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
@@ -38,10 +38,41 @@ class FakePublisher:
         self.values.append(msg.data)
 
 
+class FakeTrajectoryPublisher:
+    def __init__(self):
+        self.values = []
+
+    def publish(self, msg):
+        self.values.append(msg)
+
+
 def route_result(success, code=0):
     return SimpleNamespace(
         status=SimpleNamespace(success=success, code=code, message="test")
     )
+
+
+def test_rviz_trajectory_clears_when_route_is_unset():
+    rclpy.init()
+    node = PlanningTestAdaptor()
+    try:
+        node.rviz_trajectory_pub = FakeTrajectoryPublisher()
+        trajectory = Trajectory()
+        trajectory.header.frame_id = "map"
+
+        node.on_route_state(RouteState(state=RouteState.SET))
+        node.on_trajectory(trajectory)
+        assert node.rviz_trajectory_pub.values == [trajectory]
+
+        node.on_route_state(RouteState(state=RouteState.UNSET))
+        cleared = node.rviz_trajectory_pub.values[-1]
+        assert cleared.header.frame_id == "map"
+        assert not cleared.points
+        node.on_trajectory(trajectory)
+        assert node.rviz_trajectory_pub.values[-1] is cleared
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 def test_failed_route_retries_until_success_then_clears_and_restores_auto():

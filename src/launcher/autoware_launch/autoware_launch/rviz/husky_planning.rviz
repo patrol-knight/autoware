@@ -184,7 +184,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /planning/trajectory
+        Value: /planning/trajectory_rviz
       Value: true
       View Footprint:
         Alpha: 1

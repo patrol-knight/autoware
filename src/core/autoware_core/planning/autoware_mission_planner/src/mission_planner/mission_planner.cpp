@@ -21,6 +21,7 @@
 
 #include <autoware_map_msgs/msg/lanelet_map_bin.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <memory>
 #include <string>
@@ -299,9 +300,11 @@ void MissionPlanner::change_route()
   planner_->clearRoute();
   arrival_checker_.set_goal();
 
-  // TODO(Takagi, Isamu): publish an empty route here
-  // pub_route_->publish();
-  // pub_marker_->publish();
+  MarkerArray markers;
+  visualization_msgs::msg::Marker clear_marker;
+  clear_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+  markers.markers.push_back(clear_marker);
+  pub_marker_->publish(markers);
 }
 
 void MissionPlanner::change_route(const LaneletRoute & route)

@@ -5,7 +5,7 @@ import time
 
 import rclpy
 from autoware_adapi_v1_msgs.srv import SetRoutePoints
-from autoware_planning_msgs.msg import RouteState
+from autoware_planning_msgs.msg import RouteState, Trajectory
 from autoware_planning_msgs.srv import ClearRoute, SetWaypointRoute
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
@@ -40,6 +40,12 @@ class PlanningTestAdaptor(Node):
         self.route_request_status_pub = self.create_publisher(
             String, "/planning/route_request_status", 10
         )
+        self.rviz_trajectory_pub = self.create_publisher(
+            Trajectory, "/planning/trajectory_rviz", 10
+        )
+        self.create_subscription(
+            Trajectory, "/planning/trajectory", self.on_trajectory, 10
+        )
         self.route_state_sub = self.create_subscription(
             RouteState, "/planning/route_state", self.on_route_state, state_qos
         )
@@ -66,6 +72,14 @@ class PlanningTestAdaptor(Node):
         self.route_state = msg.state
         if msg.state == RouteState.UNSET:
             self.manual_cancel_pending = False
+            empty = Trajectory()
+            empty.header.frame_id = "map"
+            empty.header.stamp = self.get_clock().now().to_msg()
+            self.rviz_trajectory_pub.publish(empty)
+
+    def on_trajectory(self, msg):
+        if self.route_state == RouteState.SET:
+            self.rviz_trajectory_pub.publish(msg)
 
     def on_manual_route_cancel(self, _msg):
         if self.failure_goal is not None:
