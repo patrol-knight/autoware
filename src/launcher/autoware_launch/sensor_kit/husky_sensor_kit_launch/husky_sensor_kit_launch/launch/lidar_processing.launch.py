@@ -28,11 +28,18 @@ def generate_launch_description():
                 "update_azimuth_and_distance": False,
                 "processing_time_threshold_sec": 0.01,
                 "timestamp_mismatch_fraction_threshold": 0.01,
-            }],
+            }, LaunchConfiguration("lidar_input_rate_param_file")],
         ),
     ]
 
     return LaunchDescription([
+        DeclareLaunchArgument(
+            "lidar_input_rate_param_file",
+            default_value=PathJoinSubstitution([
+                FindPackageShare("autoware_launch"),
+                "config", "sensing", "lidar_input_rate.param.yaml",
+            ]),
+        ),
         DeclareLaunchArgument(
             "obstacle_stop_param_file",
             default_value=PathJoinSubstitution([

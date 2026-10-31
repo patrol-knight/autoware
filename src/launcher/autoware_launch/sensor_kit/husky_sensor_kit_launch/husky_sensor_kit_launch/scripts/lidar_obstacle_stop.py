@@ -104,6 +104,7 @@ class LidarObstacleStop(Node):
                 ground_scan_index=self.ground_scan_index,
                 sensor_mount_angle_deg=self.sensor_mount_angle,
                 ground_angle_tolerance_deg=self.ground_angle_tolerance,
+                half_angle_deg=self.half_angle,
             )
             count = count_front_obstacles(
                 nonground, max_range=self.max_range, half_angle_deg=self.half_angle,

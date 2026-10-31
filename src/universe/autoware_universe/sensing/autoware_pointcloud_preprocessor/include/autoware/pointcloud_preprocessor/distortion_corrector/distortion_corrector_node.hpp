@@ -29,7 +29,9 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
+#include <chrono>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -64,6 +66,9 @@ private:
   bool update_azimuth_and_distance_;
   double processing_time_threshold_sec_;
   double timestamp_mismatch_fraction_threshold_;
+  double lidar_input_rate_;
+  std::optional<rclcpp::Time> last_pointcloud_accepted_stamp_;
+  std::optional<std::chrono::steady_clock::time_point> last_pointcloud_accepted_at_;
 
   std::optional<AngleConversion> angle_conversion_opt_;
 

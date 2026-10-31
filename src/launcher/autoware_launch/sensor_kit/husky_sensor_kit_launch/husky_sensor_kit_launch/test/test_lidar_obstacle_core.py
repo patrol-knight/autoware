@@ -43,15 +43,34 @@ class TestLidarObstacleCore(unittest.TestCase):
         self.assertEqual(nonground[0, 2], np.float32(0.1))
         self.assertEqual(count_front_obstacles(nonground), 0)
 
-    def test_ground_and_nonground_outputs_cover_the_projected_scan(self):
+    def test_ground_and_nonground_outputs_cover_only_the_front_sector(self):
         points = [
             (1.0, 0.0, -1.0, 0), (1.2, 0.0, -1.0, 1),
             (1.0, 0.2, -0.5, 9), (-1.0, 0.0, -0.5, 9),
         ]
         ground, nonground = segment_ground(points)
         self.assertEqual(len(ground), 2)
-        self.assertEqual(len(nonground), 2)
+        self.assertEqual(len(nonground), 1)
         self.assertEqual(count_front_obstacles(nonground), 1)
+
+    def test_ground_segmentation_keeps_five_degree_margin(self):
+        def pair(degrees):
+            angle = np.radians(degrees)
+            return [(cos(angle), sin(angle), -1.0, 0),
+                    (1.2 * cos(angle), 1.2 * sin(angle), -1.0, 1)]
+
+        angle = np.radians(49)
+        points = pair(30) + pair(-30) + pair(49) + pair(51)
+        points.append((cos(angle), sin(angle), -0.5, 9))
+        ground, nonground = segment_ground(points, half_angle_deg=45.0)
+        self.assertEqual(len(ground), 6)
+        self.assertEqual(len(nonground), 1)
+        self.assertTrue(np.all(ground[:, 0] > 0))
+        self.assertEqual(count_front_obstacles(nonground, half_angle_deg=45.0), 0)
+
+        outside_ground, outside_nonground = segment_ground(pair(51), half_angle_deg=45.0)
+        self.assertEqual(outside_ground.shape, (0, 3))
+        self.assertEqual(outside_nonground.shape, (0, 3))
 
     def test_structured_driver_cloud_and_ring_alias(self):
         cloud = np.array(

@@ -19,15 +19,16 @@ def _point_columns(points):
 def segment_ground(
     points, *, num_scans=16, horizon_scan=1800, ground_scan_index=7,
     sensor_mount_angle_deg=0.0, ground_angle_tolerance_deg=10.0,
+    half_angle_deg=60.0,
 ):
-    """Return XYZ arrays for ground and non-ground projected cells.
+    """Return ground and non-ground XYZ cells within the forward sector plus 5°.
 
     Channel 0 is the lowest elevation. Each ring/azimuth cell keeps its
     first valid return; adjacent low rings are classified by their local slope.
     """
     if not (num_scans > 1 and horizon_scan > 0 and
             0 <= ground_scan_index < num_scans - 1 and
-            ground_angle_tolerance_deg >= 0):
+            ground_angle_tolerance_deg >= 0 and 0 < half_angle_deg <= 90):
         raise ValueError("Invalid ground removal parameters")
 
     x, y, z, channel = _point_columns(points)
@@ -46,6 +47,12 @@ def segment_ground(
         return empty, empty.copy()
 
     azimuth = np.arctan2(y.astype(np.float64), x.astype(np.float64))
+    in_sector = np.abs(np.degrees(azimuth)) <= half_angle_deg + 5.0
+    x, y, z, ring = x[in_sector], y[in_sector], z[in_sector], ring[in_sector]
+    azimuth = azimuth[in_sector]
+    if not len(x):
+        empty = np.empty((0, 3), dtype=np.float32)
+        return empty, empty.copy()
     column = (np.floor((azimuth + np.pi) / (2 * np.pi / horizon_scan))
               .astype(np.int32) % horizon_scan)
     key = ring * horizon_scan + column
@@ -62,7 +69,7 @@ def segment_ground(
     grid[keys] = xyz
     present = np.zeros(cell_count, dtype=bool)
     present[keys] = True
-    lower = np.arange((ground_scan_index + 1) * horizon_scan)
+    lower = keys[keys < (ground_scan_index + 1) * horizon_scan]
     lower = lower[present[lower] & present[lower + horizon_scan]]
     upper = lower + horizon_scan
     delta = grid[upper] - grid[lower]
@@ -101,6 +108,7 @@ def count_obstacles(points, *, num_scans=16, horizon_scan=1800,
         ground_scan_index=ground_scan_index,
         sensor_mount_angle_deg=sensor_mount_angle_deg,
         ground_angle_tolerance_deg=ground_angle_tolerance_deg,
+        half_angle_deg=half_angle_deg,
     )
     return count_front_obstacles(nonground, max_range=max_range,
                                  half_angle_deg=half_angle_deg,

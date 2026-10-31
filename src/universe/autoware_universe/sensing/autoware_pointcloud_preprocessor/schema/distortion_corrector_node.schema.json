@@ -35,6 +35,12 @@
           "type": "number",
           "description": "Threshold for the fraction of points that lack corresponding twist or IMU data within the allowed timestamp tolerance.",
           "default": 0.01
+        },
+        "lidar_input_rate": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum accepted pointcloud rate in Hz. Zero disables input rate limiting.",
+          "default": 0.0
         }
       },
       "required": [

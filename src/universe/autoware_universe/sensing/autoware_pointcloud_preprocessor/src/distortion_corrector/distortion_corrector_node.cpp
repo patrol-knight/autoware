@@ -19,7 +19,9 @@
 #include "autoware/pointcloud_preprocessor/distortion_corrector/distortion_corrector.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -47,6 +49,10 @@ DistortionCorrectorComponent::DistortionCorrectorComponent(const rclcpp::NodeOpt
   processing_time_threshold_sec_ = declare_parameter<float>("processing_time_threshold_sec");
   timestamp_mismatch_fraction_threshold_ =
     declare_parameter<float>("timestamp_mismatch_fraction_threshold");
+  lidar_input_rate_ = declare_parameter<double>("lidar_input_rate", 0.0);
+  if (!std::isfinite(lidar_input_rate_) || lidar_input_rate_ < 0.0) {
+    throw std::invalid_argument("lidar_input_rate must be finite and nonnegative");
+  }
 
   // Publisher
   {
@@ -94,6 +100,24 @@ void DistortionCorrectorComponent::pointcloud_callback(PointCloud2::UniquePtr po
 
   if (points_sub_count < 1) {
     return;
+  }
+
+  if (lidar_input_rate_ > 0.0) {
+    const auto now = std::chrono::steady_clock::now();
+    const auto interval = std::chrono::duration<double>(1.0 / lidar_input_rate_);
+    const rclcpp::Time stamp(pointcloud_msg->header.stamp);
+    if (stamp.nanoseconds() != 0 && last_pointcloud_accepted_stamp_) {
+      const double elapsed = (stamp - *last_pointcloud_accepted_stamp_).seconds();
+      if (elapsed >= 0.0 && elapsed < interval.count()) {
+        return;
+      }
+    } else if (last_pointcloud_accepted_at_ && now - *last_pointcloud_accepted_at_ < interval) {
+      return;
+    }
+    last_pointcloud_accepted_stamp_ = stamp.nanoseconds() != 0
+                                        ? std::make_optional(stamp)
+                                        : std::nullopt;
+    last_pointcloud_accepted_at_ = now;
   }
 
   std::vector<geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr> twist_msgs =

@@ -46,6 +46,10 @@ integration is still needed before planning or control uses Husky geometry.
 - `/velodyne_points` feeds `distortion_corrector_node` directly, which publishes
   `/sensing/lidar/concatenated/pointcloud`. The ring outlier filter is bypassed;
   `/sensing/lidar/top/rectified/pointcloud_ex` is no longer published.
+  The corrector accepts at most `lidar_input_rate` clouds per second (default
+  5 Hz from `autoware_launch/config/sensing/lidar_input_rate.param.yaml`), so
+  its output rate follows the accepted input rate when the sensor supplies at
+  least 5 Hz. A slower sensor produces a slower output.
   The best-effort `/sensing/lidar/top/pointcloud_raw_ex` copy is available
   for monitoring and recording; it is not an input to distortion correction.
 - `/fixposition/fpa/corrimu` (`fixposition_driver_msgs/FpaImu`) to
@@ -58,9 +62,10 @@ integration is still needed before planning or control uses Husky geometry.
 The Husky LiDAR processing launch reads the distortion corrector's
 `/sensing/lidar/concatenated/pointcloud`. The corrector retains the VLP-16
 `channel` field and the `velodyne` sensor frame while correcting `x`, `y`, and
-`z`. The obstacle node projects `channel` (or `ring`) and
-the azimuth computed from `x` and `y` into a 16 by 1800 scan grid, keeping the first valid return in
-each cell. For adjacent low rings 0–7 and 1–8 at the same azimuth, it measures
+`z`. The obstacle node first keeps points within the configured forward
+`half_angle_deg + 5°` sector, then projects `channel` (or `ring`) and the azimuth
+computed from `x` and `y` into a 16 by 1800 scan grid, keeping the first valid
+return in each cell. For adjacent low rings 0–7 and 1–8 at the same azimuth, it measures
 the angle of the line between returns. When that angle is within 10° of the
 0° sensor mounting angle, both cells are classified as ground. Missing pairs
 and unmatched cells remain non-ground. The grid size, last low ring, mounting
@@ -69,22 +74,24 @@ The defaults are in
 `autoware_launch/config/sensing/lidar_obstacle_stop.param.yaml`. The LiDAR
 processing launch loads that file and accepts `obstacle_stop_param_file` to
 select another ROS parameter YAML.
-`detection_fps` defaults to 10.0. A steady-clock timer processes the newest
-corrected cloud at most once per 0.1 seconds; older unprocessed clouds are
+`detection_fps` defaults to 10.0 in the node and is set to 2.0 in the Husky
+parameter file. A steady-clock timer processes the newest corrected cloud
+at most once per timer period; older unprocessed clouds are
 replaced. If the input is slower, each new cloud is processed at the next tick.
 The Husky command bridge treats obstacle status older than 1.5 seconds as a
 stop condition, so a much lower detection rate also requires a longer bridge
 `obstacle_timeout_s`.
 
-It counts non-ground cells within 2 m of the LiDAR and within ±60° of its
-forward axis. At 20 cells, it publishes `true` on
+It counts non-ground cells within 2 m of the LiDAR and within the configured
+`half_angle_deg` sector (±45° in the Husky parameter file). At the configured
+40 cells, it publishes `true` on
 `/sensing/lidar/obstacle_stop`; it publishes `false` again when the count
-falls below 20. `/sensing/lidar/obstacle_count` reports a count capped at 20.
-The same full-azimuth segmentation also publishes
+falls below 40. `/sensing/lidar/obstacle_count` reports a count capped at 40.
+The segmentation, including its 5° margin, also publishes
 `/sensing/lidar/ground/pointcloud` and
 `/sensing/lidar/nonground/pointcloud` as XYZ `PointCloud2` clouds. These clouds
-contain the closest valid return per ring and azimuth cell and retain the input
-timestamp and `velodyne` frame. The front sector and 2 m limit apply only to
+contain the first valid return per ring and azimuth cell within the sector, and
+retain the input timestamp and `velodyne` frame. The 2 m limit applies only to
 the stop count, not to these output clouds.
 The node packs and publishes each visualization cloud only while that topic
 has subscribers; obstacle counting and the stop decision run on every selected scan.
