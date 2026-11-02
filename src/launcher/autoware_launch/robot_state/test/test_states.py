@@ -8,7 +8,7 @@ from autoware_vehicle_msgs.msg import VelocityReport
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu, PointCloud2
-from std_msgs.msg import String
+from std_msgs.msg import Header, String
 
 from robot_state.node import REACH_DELIVERY_S, RobotState
 
@@ -315,6 +315,30 @@ def test_each_missing_or_stale_sensor_reports_notready():
             assert node.status() == "notready"
             feed_sensors(node)
             assert node.status() == "ready"
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_cancel_changes_navigation_to_ready_and_ignores_stale_route_updates():
+    rclpy.init()
+    node = RobotState()
+    try:
+        node.on_localization(
+            LocalizationInitializationState(state=LocalizationInitializationState.INITIALIZED)
+        )
+        feed_sensors(node)
+        node.on_route(RouteState(state=RouteState.SET))
+        node.on_operation(OperationModeState(
+            mode=OperationModeState.AUTONOMOUS, is_autoware_control_enabled=True
+        ))
+        assert node.status() == "navigate"
+        node.on_cancel(Header())
+        assert node.status() == "ready"
+        node.on_route(RouteState(state=RouteState.ABORTED))
+        assert node.status() == "ready"
+        node.on_route(RouteState(state=RouteState.UNSET))
+        assert node.status() == "ready"
     finally:
         node.destroy_node()
         rclpy.shutdown()

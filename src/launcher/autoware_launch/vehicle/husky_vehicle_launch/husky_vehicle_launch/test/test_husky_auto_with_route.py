@@ -7,7 +7,7 @@ import rclpy
 from autoware_planning_msgs.msg import RouteState, Trajectory, TrajectoryPoint
 from geometry_msgs.msg import Twist
 from rclpy.parameter import Parameter
-from std_msgs.msg import Bool, String
+from std_msgs.msg import Bool, Header, String
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
@@ -74,6 +74,24 @@ class TestHuskyAutoWithRoute(unittest.TestCase):
         self.send_trajectory_and_tracking()
         self.bridge._maybe_auto_enable()
         self.assertFalse(self.bridge.gate.enabled)
+
+    def test_cancel_stops_active_route_and_blocks_restart_until_unset(self):
+        self.set_route()
+        self.send_trajectory_and_tracking()
+        self.bridge._maybe_auto_enable()
+        self.assertTrue(self.bridge.gate.enabled)
+
+        self.bridge.on_cancel(Header())
+        self.assertFalse(self.bridge.gate.enabled)
+        self.assertTrue(self.bridge.cancelled)
+        self.assertIsNone(self.bridge.auto_trajectory)
+        self.send_trajectory_and_tracking()
+        self.bridge._maybe_auto_enable()
+        self.assertFalse(self.bridge.gate.enabled)
+        self.assertEqual(self.bridge._request_enable(), (False, "route_cancelled"))
+
+        self.bridge.on_route_state(RouteState(state=RouteState.UNSET))
+        self.assertFalse(self.bridge.cancelled)
 
     def test_invalid_trajectory_and_manual_takeover_do_not_enable(self):
         self.set_route()

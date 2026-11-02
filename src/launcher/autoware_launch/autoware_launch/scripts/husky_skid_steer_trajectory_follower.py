@@ -15,7 +15,7 @@ from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from rclpy.time import Time
-from std_msgs.msg import String
+from std_msgs.msg import Header, String
 
 from husky_control_core import (
     Limits, Pose2D, Waypoint, apply_velocity_feedback, calculate_command, wrap_angle,
@@ -84,6 +84,7 @@ class HuskySkidSteerTrajectoryFollower(Node):
 
         self.trajectory = None
         self.route_state = None
+        self.cancelled = False
         self.odometry = None
         self.velocity_report = None
         self.previous_linear = 0.0
@@ -103,6 +104,7 @@ class HuskySkidSteerTrajectoryFollower(Node):
             RouteState, "/planning/route_state", self.on_route_state,
             QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL),
         )
+        self.create_subscription(Header, "/husky/cancel", self.on_cancel, 10)
         self.odometry_sub = self.create_subscription(
             Odometry, "/localization/kinematic_state", self.on_odometry, qos_profile_sensor_data
         )
@@ -113,11 +115,18 @@ class HuskySkidSteerTrajectoryFollower(Node):
         self.get_logger().info("Husky follower ready: /control/husky/cmd_vel")
 
     def on_trajectory(self, msg):
-        if self.route_state == RouteState.SET:
+        if self.route_state == RouteState.SET and not self.cancelled:
             self.trajectory = msg
+
+    def on_cancel(self, _msg):
+        self.cancelled = self.route_state != RouteState.UNSET
+        self.trajectory = None
+        self.publish_stop("cancelled")
 
     def on_route_state(self, msg):
         self.route_state = msg.state
+        if msg.state == RouteState.UNSET:
+            self.cancelled = False
         if msg.state != RouteState.SET:
             self.trajectory = None
             self.publish_stop("route_not_active")
@@ -176,7 +185,7 @@ class HuskySkidSteerTrajectoryFollower(Node):
         self.prediction_pub.publish(prediction)
 
     def on_timer(self):
-        if self.route_state != RouteState.SET:
+        if self.cancelled or self.route_state != RouteState.SET:
             self.publish_stop("route_not_active")
             return
         now = self.get_clock().now()

@@ -19,7 +19,7 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from rclpy.signals import SignalHandlerOptions
 from rclpy.time import Time
-from std_msgs.msg import Bool, String
+from std_msgs.msg import Bool, Header, String
 from std_srvs.srv import SetBool
 
 from husky_twist_gate_core import TwistGate
@@ -119,6 +119,7 @@ class HuskyTwistVehicleInterface(Node):
         self.auto_blocked_for_route = False
         self.auto_trajectory = None
         self.auto_trajectory_at = None
+        self.cancelled = False
 
         self.output_pub = self.create_publisher(Twist, output_topic, 10)
         self.state_pub = self.create_publisher(String, "/control/husky/bridge_state", 10)
@@ -157,6 +158,7 @@ class HuskyTwistVehicleInterface(Node):
                     callback,
                 )
         self.create_subscription(Twist, input_topic, self.on_command, 10)
+        self.create_subscription(Header, "/husky/cancel", self.on_cancel, 10)
         self.create_subscription(Bool, estop_topic, self.on_estop, qos_profile_sensor_data)
         self.create_subscription(
             Bool, str(self.get_parameter("obstacle_stop_topic").value),
@@ -340,6 +342,8 @@ class HuskyTwistVehicleInterface(Node):
     def on_route_state(self, msg):
         previous_state = self.route_state
         self.route_state = msg.state
+        if msg.state == RouteState.UNSET:
+            self.cancelled = False
         if msg.state == RouteState.SET and previous_state != RouteState.SET:
             self.route_stamp_ns = msg.stamp.sec * 1_000_000_000 + msg.stamp.nanosec
             self.auto_started_for_route = self.gate.enabled
@@ -382,7 +386,8 @@ class HuskyTwistVehicleInterface(Node):
 
     def _maybe_auto_enable(self):
         if (
-            not self.enable_auto_with_route
+            self.cancelled
+            or not self.enable_auto_with_route
             or self.route_state != RouteState.SET
             or self.auto_started_for_route
             or self.auto_blocked_for_route
@@ -451,6 +456,8 @@ class HuskyTwistVehicleInterface(Node):
         self._publish_control_mode(time.monotonic())
 
     def _request_enable(self):
+        if self.cancelled:
+            return False, "route_cancelled"
         self._inhibit_if_simulated()
         output_conflict = self._drop_for_output_conflict()
         was_enabled = self.gate.enabled
@@ -481,6 +488,13 @@ class HuskyTwistVehicleInterface(Node):
             self._queue_stop()
         self._publish_state()
         self._publish_control_mode(time.monotonic())
+
+    def on_cancel(self, _msg):
+        self.cancelled = self.route_state != RouteState.UNSET
+        self.auto_trajectory = None
+        self.auto_trajectory_at = None
+        self._request_disable("cancelled")
+        self._queue_stop()
 
     def _request_manual_mode(self, source=None):
         self.auto_blocked_for_route = True

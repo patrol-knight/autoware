@@ -14,7 +14,7 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from rclpy.time import Time
 from sensor_msgs.msg import Imu, PointCloud2
-from std_msgs.msg import String
+from std_msgs.msg import Header, String
 
 REACH_DELIVERY_S = 0.2
 
@@ -51,6 +51,7 @@ class RobotState(Node):
         self.operation = None
         self.failed = False
         self.retry_failure_active = False
+        self.cancelled = False
         self.reach_published_for_arrival = False
         self.reach_published_at = None
         self.arrived_at = None
@@ -69,6 +70,7 @@ class RobotState(Node):
             "/localization/initialization_state", self.on_localization, qos,
         )
         self.create_subscription(RouteState, "/planning/route_state", self.on_route, qos)
+        self.create_subscription(Header, "/husky/cancel", self.on_cancel, 10)
         self.create_subscription(
             OperationModeState, "/system/operation_mode/state", self.on_operation, qos,
         )
@@ -101,6 +103,10 @@ class RobotState(Node):
         self.publish_status()
 
     def on_route(self, msg):
+        if msg.state == RouteState.UNSET:
+            self.cancelled = False
+        elif self.cancelled:
+            return
         if msg.state == RouteState.ARRIVED and self.route != RouteState.ARRIVED:
             self.reach_published_for_arrival = False
             self.reach_published_at = None
@@ -122,12 +128,26 @@ class RobotState(Node):
         self.publish_status()
 
     def on_route_request(self, msg):
+        if msg.data == "cancelled":
+            self.on_cancel(None)
+            return
+        if self.cancelled:
+            return
         if msg.data == "rejected":
             self.failed = True
             self.retry_failure_active = True
         elif msg.data in ("pending", "accepted"):
             self.failed = False
             self.retry_failure_active = False
+        self.publish_status()
+
+    def on_cancel(self, _msg):
+        self.cancelled = self.route != RouteState.UNSET
+        self.failed = False
+        self.retry_failure_active = False
+        self.reach_published_for_arrival = False
+        self.reach_published_at = None
+        self.arrived_at = None
         self.publish_status()
 
     def on_manual_command(self, _msg):
@@ -168,6 +188,13 @@ class RobotState(Node):
         if self.failed:
             return "failure"
         now = time.monotonic()
+        if self.cancelled:
+            if self.localization != LocalizationInitializationState.INITIALIZED or any(
+                seen is None or now - seen > self.sensor_timeout_s
+                for seen in self.sensor_last_seen.values()
+            ):
+                return "notready"
+            return "ready"
         if (self.operation is not None
                 and self.operation.mode in (OperationModeState.LOCAL, OperationModeState.REMOTE)
                 and self.manual_command_at is not None

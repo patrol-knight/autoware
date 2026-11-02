@@ -15,7 +15,7 @@ from rcl_interfaces.srv import SetParameters
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from rclpy.time import Time
-from std_msgs.msg import String
+from std_msgs.msg import Header, String
 
 
 class PlanningTestAdaptor(Node):
@@ -30,6 +30,7 @@ class PlanningTestAdaptor(Node):
         self.route_state = None
         self.request_in_flight = False
         self.manual_cancel_pending = False
+        self.cancel_pending = False
         self.failure_goal = None
         self.recovery_route_ready = False
         self.recovery_route_cleared = False
@@ -55,6 +56,7 @@ class PlanningTestAdaptor(Node):
         self.create_subscription(
             String, "/planning/manual_route_cancel", self.on_manual_route_cancel, 10
         )
+        self.create_subscription(Header, "/husky/cancel", self.on_cancel, 10)
         self.create_subscription(
             Odometry, "/localization/kinematic_state", self.on_localization,
             qos_profile_sensor_data,
@@ -72,6 +74,8 @@ class PlanningTestAdaptor(Node):
         self.route_state = msg.state
         if msg.state == RouteState.UNSET:
             self.manual_cancel_pending = False
+            if not self.request_in_flight:
+                self.cancel_pending = False
             empty = Trajectory()
             empty.header.frame_id = "map"
             empty.header.stamp = self.get_clock().now().to_msg()
@@ -86,6 +90,37 @@ class PlanningTestAdaptor(Node):
             return
         self.manual_cancel_pending = True
         self.try_clear_manual_route()
+
+    def on_cancel(self, _msg):
+        self.failure_goal = None
+        self.recovery_route_ready = False
+        self.recovery_route_cleared = False
+        self.auto_restore_needed = self.auto_route_disabled or self.parameter_request_in_flight
+        self.manual_cancel_pending = False
+        self.cancel_pending = self.route_state != RouteState.UNSET or self.request_in_flight
+        self.route_request_status_pub.publish(String(data="cancelled"))
+        self.try_clear_cancelled_route()
+
+    def try_clear_cancelled_route(self):
+        if not self.cancel_pending or self.request_in_flight:
+            return
+        if not self.clear_route_client.service_is_ready():
+            return
+        self.request_in_flight = True
+        future = self.clear_route_client.call_async(ClearRoute.Request())
+        future.add_done_callback(self.on_cancel_clear_result)
+
+    def on_cancel_clear_result(self, future):
+        self.request_in_flight = False
+        try:
+            status = future.result().status
+            if not status.success:
+                raise RuntimeError(status.message)
+        except Exception as exc:
+            self.get_logger().error(f"Could not clear cancelled route: {exc}")
+            return
+        self.cancel_pending = False
+        self.get_logger().info("Cancelled route cleared")
 
     def try_clear_manual_route(self):
         if not self.manual_cancel_pending or self.request_in_flight:
@@ -109,7 +144,7 @@ class PlanningTestAdaptor(Node):
         self.get_logger().info("Manual takeover cleared the planning route")
 
     def on_goal(self, goal):
-        if self.request_in_flight or self.manual_cancel_pending:
+        if self.request_in_flight or self.manual_cancel_pending or self.cancel_pending:
             self.get_logger().warn("Route request is still in progress; send the goal again")
             return
         if not self.route_client.service_is_ready():
@@ -146,6 +181,10 @@ class PlanningTestAdaptor(Node):
             self.request_in_flight = False
             self.get_logger().error(f"Could not clear completed route: {status.message}")
             return
+        if self.cancel_pending:
+            self.request_in_flight = False
+            self.try_clear_cancelled_route()
+            return
         if recovery:
             self.request_in_flight = False
             self.recovery_route_ready = False
@@ -172,6 +211,9 @@ class PlanningTestAdaptor(Node):
 
     def on_route_result(self, future, goal, retry=False):
         self.request_in_flight = False
+        if self.cancel_pending:
+            self.try_clear_cancelled_route()
+            return
         try:
             status = future.result().status
         except Exception as exc:  # ROS service failure, not a planner response
@@ -243,6 +285,9 @@ class PlanningTestAdaptor(Node):
 
     def on_retry_timer(self):
         if self.request_in_flight:
+            return
+        if self.cancel_pending:
+            self.try_clear_cancelled_route()
             return
         if self.manual_cancel_pending:
             self.try_clear_manual_route()

@@ -33,6 +33,13 @@ retries a failed clear request, and the status returns to `ready` when manual in
 The Husky trajectory follower drops its cached trajectory and publishes a stop command
 when the route is no longer active.
 
+Publish `std_msgs/msg/Header` to `/husky/cancel` to cancel navigation. The vehicle
+interface immediately disables autonomous output and sends a zero Twist; the follower
+discards its trajectory. The planning adaptor clears `/planning/clear_route`, retrying
+if the service is unavailable or fails, and abandons any failed-goal recovery. The
+status becomes `ready` while localization and sensors remain healthy. A new route can
+start after the route state becomes `UNSET`.
+
 On a successful retry, the adaptor calls `/planning/clear_route` to delete the recovered route, restores
 `enable_auto_with_route` to true, and reports `ready`. The recovered goal therefore does
 not start autonomous navigation; send another goal to navigate. The adaptor requires

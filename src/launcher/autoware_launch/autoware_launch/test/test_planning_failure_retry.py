@@ -8,7 +8,7 @@ from autoware_adapi_v1_msgs.srv import SetRoutePoints
 from autoware_planning_msgs.msg import RouteState, Trajectory
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
-from std_msgs.msg import String
+from std_msgs.msg import Header, String
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
@@ -171,6 +171,36 @@ def test_next_goal_after_arrival_clears_old_route_without_manual_mode():
         assert len(node.route_client.requests) == 1
         assert node.route_client.requests[0].goal_pose == goal.pose
         assert node.route_request_status_pub.values == ["pending", "accepted"]
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_cancel_abandons_failed_goal_and_retries_clear_route():
+    rclpy.init()
+    node = PlanningTestAdaptor()
+    try:
+        node.clear_route_client = FakeClient([route_result(False), route_result(True)])
+        node.route_client = FakeClient([])
+        node.auto_parameter_client = FakeClient([
+            SimpleNamespace(results=[SimpleNamespace(successful=True)])
+        ])
+        node.route_request_status_pub = FakePublisher()
+        node.failure_goal = PoseStamped()
+        node.auto_route_disabled = True
+        node.on_cancel(Header())
+        assert node.failure_goal is None
+        assert node.cancel_pending
+        assert node.route_request_status_pub.values == ["cancelled"]
+        node.on_goal(PoseStamped())
+        assert not node.route_client.requests
+        node.on_retry_timer()
+        assert len(node.clear_route_client.requests) == 2
+        assert not node.cancel_pending
+        node.on_retry_timer()
+        assert not node.route_client.requests
+        assert len(node.auto_parameter_client.requests) == 1
+        assert node.auto_parameter_client.requests[0].parameters[0].value.bool_value
     finally:
         node.destroy_node()
         rclpy.shutdown()
