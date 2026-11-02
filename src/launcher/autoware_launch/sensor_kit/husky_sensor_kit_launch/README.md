@@ -127,16 +127,15 @@ colcon build --symlink-install --packages-select fixposition_driver_ros2 husky_v
 
 Run `./run_autoware.sh` from the workspace root. It launches
 `autoware_launch/autoware.launch.xml` with the Husky vehicle TF, map, sensing
-processing, NDT localization, and shared pointcloud container. Sensor drivers,
-the vehicle control interface, planning, and perception are off. Simulated time
-is enabled for bag replay, and automatic GNSS initialization is disabled because
-the current sensing launch does not produce a GNSS pose. RViz opens the map-based
-localization view. For live sensors, pass
-`launch_sensing_driver:=true use_sim_time:=false`; use
-`localization_gnss_enabled:=true` only after enabling a valid GNSS pose source.
+processing, NDT localization, planning, control, and the shared pointcloud
+container. The VLP-16 and Fixposition drivers and GNSS poser are enabled;
+perception is off. The GNSS poser uses `/map/map_projector_info` from the map
+loader and publishes `/sensing/gnss/pose_with_covariance` for automatic pose
+initialization when `localization_gnss_enabled:=true`. With
+`localization_gnss_enabled:=false`, the GNSS poser still runs, but localization
+does not use its output for initialization. RViz opens the Husky planning view.
 Do not run `bring_up.sh` at the same time: it starts the same VLP-16 and
-Fixposition drivers. The GNSS poser is off because it needs
-`/map/map_projector_info` from the map loader for localization.
+Fixposition drivers.
 
 For the recorded sensing bags, run `./run_autoware.sh` and, in another terminal,
 `./replay_husky_sensing_bag.sh /path/to/bag`. The replay script publishes
