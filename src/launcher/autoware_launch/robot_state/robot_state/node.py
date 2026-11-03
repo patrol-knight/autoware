@@ -61,7 +61,7 @@ class RobotState(Node):
         self.sensor_last_seen = {"lidar": None, "imu": None, "wheel_odometry": None}
         self.last_status = None
         qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        self.publisher = self.create_publisher(String, "/robot_status", qos)
+        self.publisher = self.create_publisher(String, "/autoware/robot_status", qos)
         self.manual_route_cancel_pub = self.create_publisher(
             String, "/planning/manual_route_cancel", 10
         )

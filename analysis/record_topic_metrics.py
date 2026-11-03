@@ -27,7 +27,7 @@ TOPICS = (
     ("/control/husky/cmd_vel", Twist),
     ("/husky/cmd_vel", Twist),
     ("/sensing/lidar/obstacle_stop", Bool),
-    ("/robot_status", String),
+    ("/autoware/robot_status", String),
 )
 FIELDS = (
     "received_utc", "elapsed_s", "topic", "message_type", "sequence",

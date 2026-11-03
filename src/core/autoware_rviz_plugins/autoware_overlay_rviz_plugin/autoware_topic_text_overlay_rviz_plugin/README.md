@@ -42,7 +42,7 @@ namespaces are stored in the RViz config.
 
 ## Husky robot status panel
 
-`RobotStatusPanel` is a compact dockable panel for `/robot_status` (`std_msgs/msg/String`).
+`RobotStatusPanel` is a compact dockable panel for `/autoware/robot_status` (`std_msgs/msg/String`).
 It shows the current status in a centered color bar with a short description, following
 the row layout of the Autoware state panel. Colors distinguish `notready`, `ready`,
 `failure`, `navigate`, `reach`, and `manual`. It uses transient-local QoS to show the

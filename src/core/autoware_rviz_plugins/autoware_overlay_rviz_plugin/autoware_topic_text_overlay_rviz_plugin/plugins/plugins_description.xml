@@ -7,6 +7,6 @@
   <class name="autoware_topic_text_overlay_rviz_plugin/RobotStatusPanel"
          type="autoware::topic_text_overlay_rviz_plugin::RobotStatusPanel"
          base_class_type="rviz_common::Panel">
-    <description>Compact color-coded panel for the Husky /robot_status topic.</description>
+    <description>Compact color-coded panel for the Husky /autoware/robot_status topic.</description>
   </class>
 </library>

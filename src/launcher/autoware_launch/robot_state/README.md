@@ -1,6 +1,6 @@
 # robot_state
 
-Publishes `/robot_status` as `std_msgs/msg/String`. The publisher uses transient-local QoS so
+Publishes `/autoware/robot_status` as `std_msgs/msg/String`. The publisher uses transient-local QoS so
 late subscribers receive the current status. Start it with `ros2 launch robot_state
 robot_state.launch.py`; the Husky `run_autoware.sh` script also enables it.
 The Husky planning RViz configuration shows the topic in a compact color-coded

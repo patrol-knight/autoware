@@ -53,4 +53,4 @@ ros2 bag record \
   /diagnostics \
   /cpu_monitor/cpu_usage \
   /mem_monitor/memory_status \
-  /robot_status
+  /autoware/robot_status

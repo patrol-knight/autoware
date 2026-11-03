@@ -42,7 +42,7 @@ StatusStyle style_for(const std::string & status)
   if (status == "manual") {
     return {"#ffd24d", "Joystick control active"};
   }
-  return {"#bfc5c9", "Waiting for /robot_status"};
+  return {"#bfc5c9", "Waiting for /autoware/robot_status"};
 }
 }  // namespace
 
@@ -87,7 +87,7 @@ void RobotStatusPanel::onInitialize()
   raw_node_ = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
   const auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
   status_sub_ = raw_node_->create_subscription<std_msgs::msg::String>(
-    "/robot_status", qos, [this](const std_msgs::msg::String::ConstSharedPtr msg) {
+    "/autoware/robot_status", qos, [this](const std_msgs::msg::String::ConstSharedPtr msg) {
       const std::string status = msg->data;
       QMetaObject::invokeMethod(
         this, [this, status]() { update_status(status); }, Qt::QueuedConnection);
