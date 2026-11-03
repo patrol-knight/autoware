@@ -186,6 +186,7 @@ def test_cancel_abandons_failed_goal_and_retries_clear_route():
             SimpleNamespace(results=[SimpleNamespace(successful=True)])
         ])
         node.route_request_status_pub = FakePublisher()
+        node.on_route_state(RouteState(state=RouteState.UNSET))
         node.failure_goal = PoseStamped()
         node.auto_route_disabled = True
         node.on_cancel(Header())
@@ -194,6 +195,8 @@ def test_cancel_abandons_failed_goal_and_retries_clear_route():
         assert node.route_request_status_pub.values == ["cancelled"]
         node.on_goal(PoseStamped())
         assert not node.route_client.requests
+        node.on_route_state(RouteState(state=RouteState.UNSET))
+        assert node.cancel_pending
         node.on_retry_timer()
         assert len(node.clear_route_client.requests) == 2
         assert not node.cancel_pending

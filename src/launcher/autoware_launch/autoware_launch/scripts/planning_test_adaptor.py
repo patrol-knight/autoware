@@ -74,8 +74,6 @@ class PlanningTestAdaptor(Node):
         self.route_state = msg.state
         if msg.state == RouteState.UNSET:
             self.manual_cancel_pending = False
-            if not self.request_in_flight:
-                self.cancel_pending = False
             empty = Trajectory()
             empty.header.frame_id = "map"
             empty.header.stamp = self.get_clock().now().to_msg()
@@ -92,12 +90,15 @@ class PlanningTestAdaptor(Node):
         self.try_clear_manual_route()
 
     def on_cancel(self, _msg):
+        failed_goal_active = self.failure_goal is not None
         self.failure_goal = None
         self.recovery_route_ready = False
         self.recovery_route_cleared = False
         self.auto_restore_needed = self.auto_route_disabled or self.parameter_request_in_flight
         self.manual_cancel_pending = False
-        self.cancel_pending = self.route_state != RouteState.UNSET or self.request_in_flight
+        self.cancel_pending = (
+            failed_goal_active or self.route_state != RouteState.UNSET or self.request_in_flight
+        )
         self.route_request_status_pub.publish(String(data="cancelled"))
         self.try_clear_cancelled_route()
 

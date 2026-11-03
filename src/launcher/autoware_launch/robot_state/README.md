@@ -36,7 +36,8 @@ when the route is no longer active.
 Publish `std_msgs/msg/Header` to `/husky/cancel` to cancel navigation. The vehicle
 interface immediately disables autonomous output and sends a zero Twist; the follower
 discards its trajectory. The planning adaptor clears `/planning/clear_route`, retrying
-if the service is unavailable or fails, and abandons any failed-goal recovery. The
+if the service is unavailable or fails, including when a failed goal has already left
+the route state at `UNSET`. It also abandons any failed-goal recovery. The
 status becomes `ready` while localization and sensors remain healthy. A new route can
 start after the route state becomes `UNSET`.
 

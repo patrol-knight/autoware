@@ -342,3 +342,26 @@ def test_cancel_changes_navigation_to_ready_and_ignores_stale_route_updates():
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
+
+def test_cancel_changes_failure_with_unset_route_to_ready():
+    rclpy.init()
+    node = RobotState()
+    try:
+        node.on_localization(
+            LocalizationInitializationState(state=LocalizationInitializationState.INITIALIZED)
+        )
+        feed_sensors(node)
+        node.on_route(RouteState(state=RouteState.UNSET))
+        node.on_operation(OperationModeState(mode=OperationModeState.LOCAL))
+        node.on_manual_command(Twist())
+        node.on_route_request(String(data="rejected"))
+        assert node.status() == "failure"
+
+        node.on_cancel(Header())
+        assert node.status() == "ready"
+        node.on_route_request(String(data="rejected"))
+        assert node.status() == "ready"
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()

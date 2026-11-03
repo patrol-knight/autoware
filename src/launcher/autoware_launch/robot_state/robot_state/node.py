@@ -142,7 +142,7 @@ class RobotState(Node):
         self.publish_status()
 
     def on_cancel(self, _msg):
-        self.cancelled = self.route != RouteState.UNSET
+        self.cancelled = self.route != RouteState.UNSET or self.failed
         self.failed = False
         self.retry_failure_active = False
         self.reach_published_for_arrival = False
