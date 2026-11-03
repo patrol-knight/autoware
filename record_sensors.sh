@@ -22,6 +22,5 @@ ros2 bag record \
   /fixposition/poiimu \
   /tf \
   /tf_static \
-  /husky/platform/odom \
-  /husky/platform/odom/filtered
+  /husky/platform/odom
 

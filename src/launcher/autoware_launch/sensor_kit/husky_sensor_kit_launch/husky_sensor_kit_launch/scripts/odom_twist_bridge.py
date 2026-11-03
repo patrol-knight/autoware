@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Expose Husky's filtered wheel odometry twist to Autoware localization."""
+"""Expose Husky's wheel odometry twist to Autoware localization."""
 
 import rclpy
 from geometry_msgs.msg import TwistWithCovarianceStamped
@@ -17,7 +17,7 @@ class OdomTwistBridge(Node):
             10,
         )
         self.subscription = self.create_subscription(
-            Odometry, "/husky/platform/odom/filtered", self.on_odom, qos_profile_sensor_data
+            Odometry, "/husky/platform/odom", self.on_odom, qos_profile_sensor_data
         )
 
     def on_odom(self, msg):

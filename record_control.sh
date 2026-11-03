@@ -46,7 +46,6 @@ exec ros2 bag record -o "$OUTPUT_BAG_PATH" \
   "$HUSKY_ROBOT_NAMESPACE/twist_marker_server/cmd_vel" \
   "$HUSKY_ROBOT_NAMESPACE/platform/emergency_stop" \
   "$HUSKY_ROBOT_NAMESPACE/platform/odom" \
-  "$HUSKY_ROBOT_NAMESPACE/platform/odom/filtered" \
   /vehicle/status/control_mode \
   /vehicle/status/velocity_status \
   /system/operation_mode/state \

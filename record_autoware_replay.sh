@@ -18,7 +18,6 @@ ros2 bag record \
   /fixposition/fpa/corrimu \
   /fixposition/gnss1 \
   "/husky/platform/odom" \
-  "/husky/platform/odom/filtered" \
   "/husky/joy_teleop/joy" \
   "/husky/joy_teleop/cmd_vel" \
   "/husky/rc_teleop/cmd_vel" \

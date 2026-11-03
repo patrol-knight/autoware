@@ -33,7 +33,7 @@ class HuskyTwistVehicleInterface(Node):
         self.declare_parameter("input_topic", "/control/husky/cmd_vel")
         self.declare_parameter("output_topic", "/husky/cmd_vel")
         self.declare_parameter("estop_topic", "/husky/platform/emergency_stop")
-        self.declare_parameter("odometry_topic", "/husky/platform/odom/filtered")
+        self.declare_parameter("odometry_topic", "/husky/platform/odom")
         self.declare_parameter("velocity_frame_id", "base_link")
         self.declare_parameter("max_odometry_age_s", 0.7)
         self.declare_parameter("tracking_state_topic", "/control/husky/tracking_state")

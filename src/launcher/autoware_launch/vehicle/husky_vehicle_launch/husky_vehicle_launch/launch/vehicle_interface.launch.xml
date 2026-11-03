@@ -19,7 +19,7 @@
     <param name="input_topic" value="/control/husky/cmd_vel"/>
     <param name="output_topic" value="$(var cmd_vel_topic)"/>
     <param name="estop_topic" value="$(var robot_namespace)/platform/emergency_stop"/>
-    <param name="odometry_topic" value="$(var robot_namespace)/platform/odom/filtered"/>
+    <param name="odometry_topic" value="$(var robot_namespace)/platform/odom"/>
     <param name="velocity_frame_id" value="base_link"/>
     <param name="max_odometry_age_s" value="0.7"/>
     <param name="tracking_state_topic" value="/control/husky/tracking_state"/>

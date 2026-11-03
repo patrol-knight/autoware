@@ -19,4 +19,4 @@ exec ros2 bag play "$BAG_PATH" --clock "$@" --topics \
   /velodyne_points \
   /fixposition/fpa/corrimu \
   /fixposition/gnss1 \
-  /husky/platform/odom/filtered
+  /husky/platform/odom

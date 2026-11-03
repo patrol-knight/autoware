@@ -55,7 +55,7 @@ integration is still needed before planning or control uses Husky geometry.
 - `/fixposition/fpa/corrimu` (`fixposition_driver_msgs/FpaImu`) to
   `/sensing/imu/imu_data` (`sensor_msgs/Imu`), preserving the `FP_VRTK` frame.
 - `/fixposition/gnss1` through a QoS bridge and `autoware_gnss_poser` to GNSS pose.
-- `/husky/platform/odom/filtered` to Autoware twist input.
+- `/husky/platform/odom` to Autoware twist input.
 
 ### LiDAR obstacle stop
 
@@ -110,7 +110,7 @@ their own control path.
 
 The self crop and ring outlier filter stages are bypassed, so points reflected
 from the Husky body and isolated outliers may remain in the cloud. Motion correction needs the Husky platform's
-`/husky/platform/odom/filtered` twist; without it the distortion corrector
+`/husky/platform/odom` twist; without it the distortion corrector
 forwards the cloud and reports `Twist queue is empty`. Check point cloud fields,
 TF and timestamps before using localization. The GNSS poser currently infers
 heading from movement when enabled.

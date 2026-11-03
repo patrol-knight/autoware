@@ -8,5 +8,5 @@ source "$WORKSPACE/install/setup.bash"
 ros2 bag play $1 --clock 200 --topics \
     /velodyne_points \
     /fixposition/fpa/corrimu \
-    /husky/platform/odom/filtered \
+    /husky/platform/odom \
     /fixposition/gnss1

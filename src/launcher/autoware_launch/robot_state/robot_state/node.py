@@ -29,7 +29,7 @@ class RobotState(Node):
         self.declare_parameter("stop_angular_tolerance_radps", 0.01)
         self.declare_parameter("lidar_topic", "/sensing/lidar/obstacle_stop")
         self.declare_parameter("imu_topic", "/sensing/imu/imu_data")
-        self.declare_parameter("wheel_odometry_topic", "/husky/platform/odom/filtered")
+        self.declare_parameter("wheel_odometry_topic", "/husky/platform/odom")
         self.manual_command_timeout_s = float(
             self.get_parameter("manual_command_timeout_s").value
         )

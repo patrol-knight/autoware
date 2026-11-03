@@ -61,7 +61,7 @@ does not produce `reach`.
 
 Sensor liveness uses the receipt time of `/sensing/lidar/obstacle_stop`
 (`std_msgs/msg/Bool`), `/sensing/imu/imu_data` (`sensor_msgs/msg/Imu`),
-and `/husky/platform/odom/filtered` (`nav_msgs/msg/Odometry`). All three must
+and `/husky/platform/odom` (`nav_msgs/msg/Odometry`). All three must
 arrive within `sensor_timeout_s` (default 2 seconds); the three topic names are
 configurable with `lidar_topic`, `imu_topic`, and `wheel_odometry_topic`.
 The LiDAR obstacle detector publishes a Bool for each successfully processed scan;
