@@ -8,7 +8,6 @@ import rclpy
 from autoware_adapi_v1_msgs.msg import LocalizationInitializationState, OperationModeState
 from autoware_planning_msgs.msg import RouteState
 from autoware_vehicle_msgs.msg import VelocityReport
-from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
@@ -22,7 +21,6 @@ REACH_DELIVERY_S = 0.2
 class RobotState(Node):
     def __init__(self):
         super().__init__("robot_state")
-        self.declare_parameter("manual_command_timeout_s", 1.0)
         self.declare_parameter("sensor_timeout_s", 2.0)
         self.declare_parameter("velocity_timeout_s", 1.0)
         self.declare_parameter("stop_linear_tolerance_mps", 0.01)
@@ -30,9 +28,6 @@ class RobotState(Node):
         self.declare_parameter("lidar_topic", "/sensing/lidar/obstacle_stop")
         self.declare_parameter("imu_topic", "/sensing/imu/imu_data")
         self.declare_parameter("wheel_odometry_topic", "/husky/platform/odom")
-        self.manual_command_timeout_s = float(
-            self.get_parameter("manual_command_timeout_s").value
-        )
         self.sensor_timeout_s = float(self.get_parameter("sensor_timeout_s").value)
         self.velocity_timeout_s = float(self.get_parameter("velocity_timeout_s").value)
         self.stop_linear_tolerance_mps = float(
@@ -41,8 +36,7 @@ class RobotState(Node):
         self.stop_angular_tolerance_radps = float(
             self.get_parameter("stop_angular_tolerance_radps").value
         )
-        if (self.manual_command_timeout_s <= 0 or self.sensor_timeout_s <= 0
-                or self.velocity_timeout_s <= 0
+        if (self.sensor_timeout_s <= 0 or self.velocity_timeout_s <= 0
                 or self.stop_linear_tolerance_mps < 0
                 or self.stop_angular_tolerance_radps < 0):
             raise ValueError("Status timeouts must be positive and stop tolerances nonnegative")
@@ -57,14 +51,10 @@ class RobotState(Node):
         self.arrived_at = None
         self.velocity_report = None
         self.velocity_seen_at = None
-        self.manual_command_at = None
         self.sensor_last_seen = {"lidar": None, "imu": None, "wheel_odometry": None}
         self.last_status = None
         qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.publisher = self.create_publisher(String, "/autoware/robot_status", qos)
-        self.manual_route_cancel_pub = self.create_publisher(
-            String, "/planning/manual_route_cancel", 10
-        )
         self.create_subscription(
             LocalizationInitializationState,
             "/localization/initialization_state", self.on_localization, qos,
@@ -93,8 +83,6 @@ class RobotState(Node):
                 lambda msg, name=name: self.on_sensor(name, msg),
                 qos_profile_sensor_data,
             )
-        for topic in ("/husky/joy_teleop/cmd_vel", "/husky/rc_teleop/cmd_vel"):
-            self.create_subscription(Twist, topic, self.on_manual_command, 10)
         self.status_timer = self.create_timer(0.2, lambda: self.publish_status(force=True))
         self.publish_status()
 
@@ -150,10 +138,6 @@ class RobotState(Node):
         self.arrived_at = None
         self.publish_status()
 
-    def on_manual_command(self, _msg):
-        self.manual_command_at = time.monotonic()
-        self.publish_status()
-
     def on_velocity(self, msg):
         values = (msg.longitudinal_velocity, msg.lateral_velocity, msg.heading_rate)
         if not all(isfinite(value) for value in values):
@@ -195,11 +179,6 @@ class RobotState(Node):
             ):
                 return "notready"
             return "ready"
-        if (self.operation is not None
-                and self.operation.mode in (OperationModeState.LOCAL, OperationModeState.REMOTE)
-                and self.manual_command_at is not None
-                and now - self.manual_command_at < self.manual_command_timeout_s):
-            return "manual"
         if self.localization != LocalizationInitializationState.INITIALIZED:
             return "notready"
         if any(
@@ -226,10 +205,6 @@ class RobotState(Node):
         changed = status != self.last_status
         if not changed and (not force or status == "reach"):
             return
-        if (changed and status == "manual"
-                and self.last_status in ("ready", "navigate", "reach")
-                and self.route not in (None, RouteState.UNSET)):
-            self.manual_route_cancel_pub.publish(String(data=self.last_status))
         self.publisher.publish(String(data=status))
         if status == "reach":
             self.reach_published_for_arrival = True

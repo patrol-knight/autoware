@@ -117,12 +117,16 @@ class HuskyTwistVehicleInterface(Node):
         self.route_stamp_ns = None
         self.auto_started_for_route = False
         self.auto_blocked_for_route = False
+        self.manual_route_cancel_requested = False
         self.auto_trajectory = None
         self.auto_trajectory_at = None
         self.cancelled = False
 
         self.output_pub = self.create_publisher(Twist, output_topic, 10)
         self.state_pub = self.create_publisher(String, "/control/husky/bridge_state", 10)
+        self.manual_route_cancel_pub = self.create_publisher(
+            String, "/planning/manual_route_cancel", 10
+        )
         self.velocity_pub = self.create_publisher(
             VelocityReport, "/vehicle/status/velocity_status", 10
         )
@@ -344,7 +348,9 @@ class HuskyTwistVehicleInterface(Node):
         self.route_state = msg.state
         if msg.state == RouteState.UNSET:
             self.cancelled = False
+            self.manual_route_cancel_requested = False
         if msg.state == RouteState.SET and previous_state != RouteState.SET:
+            self.manual_route_cancel_requested = False
             self.route_stamp_ns = msg.stamp.sec * 1_000_000_000 + msg.stamp.nanosec
             self.auto_started_for_route = self.gate.enabled
             self.auto_blocked_for_route = (
@@ -454,6 +460,10 @@ class HuskyTwistVehicleInterface(Node):
         if was_enabled:
             self._queue_stop()
         self._publish_control_mode(time.monotonic())
+        if (self.route_state not in (None, RouteState.UNSET, RouteState.ABORTED)
+                and not self.cancelled and not self.manual_route_cancel_requested):
+            self.manual_route_cancel_requested = True
+            self.manual_route_cancel_pub.publish(String(data="manual_takeover"))
 
     def _request_enable(self):
         if self.cancelled:

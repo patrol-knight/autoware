@@ -11,11 +11,10 @@ single arrival event and is not repeated at 5 Hz.
 | Value | Meaning |
 | --- | --- |
 | `notready` | Localization has not reported `INITIALIZED`, or LiDAR, IMU, or wheel odometry messages are missing or stale. |
-| `ready` | Localization is initialized and the robot is idle, including after arrival. |
+| `ready` | Localization is initialized, sensors are current, and autonomous navigation is not active. |
 | `failure` | Planning could not find a valid route for the RViz goal; the adaptor retries from the current localization pose once per second. An aborted route also reports failure. |
 | `navigate` | An assigned route is active and autonomous control is enabled. |
 | `reach` | The route entered `ARRIVED` and fresh vehicle velocity confirms a stop; published once per arrival, then replaced by `ready` after a short delivery interval. |
-| `manual` | Joystick/RC commands are recent while the Husky interface reports local or remote control, unless planning is in `failure`. |
 
 `ABORTED` is an Autoware route-state enum for an aborted route. The status node maps it
 to `failure`, but it does not by itself start the same-goal retry; that retry starts
@@ -26,12 +25,11 @@ The node reads `/localization/initialization_state`, `/planning/route_state`, an
 `/planning/route_request_status` with `pending`, `accepted`, or `rejected` for its
 route service requests. While retrying a rejected goal, `failure` remains active even
 if a route briefly appears or the joystick is used. The 1 Hz retry continues during
-manual control. When a `notready` robot receives joystick or RC input, it displays
-`manual` and returns to `notready` when that input stops. Manual takeover from `ready`,
-`navigate`, or `reach` requests `/planning/clear_route` when a route exists; the adaptor
-retries a failed clear request, and the status returns to `ready` when manual input stops.
-The Husky trajectory follower drops its cached trajectory and publishes a stop command
-when the route is no longer active.
+manual control. The Husky vehicle interface handles joystick and RC takeover and
+requests `/planning/clear_route` when a route exists; the adaptor retries a failed
+clear request. Check manual control through the vehicle interface's operation mode,
+outside `/autoware/robot_status`. The Husky trajectory follower drops its cached
+trajectory and publishes a stop command when the route is no longer active.
 
 Publish `std_msgs/msg/Header` to `/husky/cancel` to cancel navigation. The vehicle
 interface immediately disables autonomous output and sends a zero Twist; the follower
@@ -49,9 +47,8 @@ precedence over the Husky interface's automatic
 switch to local mode on arrival. The `reach` event gets a 0.2-second delivery interval
 so subscribers with a one-message queue can process it before `ready`; a new goal
 received after `ARRIVED` clears the completed route and is submitted immediately, without
-requiring a manual mode switch. `manual_command_timeout_s` (default 1 second)
-controls how long a joystick or RC command counts as active. Planner unready and invalid-state
-service errors do not count as an invalid goal.
+requiring a manual mode switch. Planner unready and invalid-state service errors
+do not count as an invalid goal.
 
 The stop confirmation reads `/vehicle/status/velocity_status` after `ARRIVED` and
 requires a fresh `autoware_vehicle_msgs/msg/VelocityReport`. Longitudinal and lateral

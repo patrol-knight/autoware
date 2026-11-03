@@ -5,7 +5,6 @@ import rclpy
 from autoware_adapi_v1_msgs.msg import LocalizationInitializationState, OperationModeState
 from autoware_planning_msgs.msg import RouteState
 from autoware_vehicle_msgs.msg import VelocityReport
-from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Bool, Header, String
@@ -111,10 +110,6 @@ def test_navigation_lifecycle():
         assert [call.args[0].data for call in node.publisher.publish.call_args_list] == [
             "ready", "reach", "ready"
         ]
-        node.on_manual_command(Twist())
-        assert node.status() == "manual"
-        node.manual_command_at = time.monotonic() - node.manual_command_timeout_s - 1
-        assert node.status() == "ready"
         node.on_route_request(String(data="pending"))
         assert node.status() == "ready"
     finally:
@@ -122,7 +117,7 @@ def test_navigation_lifecycle():
         rclpy.shutdown()
 
 
-def test_reach_is_published_once_per_arrival_even_after_manual_interruption():
+def test_reach_is_published_once_per_arrival():
     rclpy.init()
     node = RobotState()
     try:
@@ -138,9 +133,7 @@ def test_reach_is_published_once_per_arrival_even_after_manual_interruption():
             "reach"
         ]
 
-        node.on_manual_command(Twist())
-        assert node.last_status == "manual"
-        node.manual_command_at = time.monotonic() - node.manual_command_timeout_s - 1
+        node.reach_published_at = time.monotonic() - REACH_DELIVERY_S - 0.01
         node.publish_status()
         assert node.last_status == "ready"
         node.on_route(RouteState(state=RouteState.ARRIVED))
@@ -199,7 +192,7 @@ def test_reach_waits_for_new_zero_velocity_in_all_axes():
         rclpy.shutdown()
 
 
-def test_failure_and_manual_priority():
+def test_failure_survives_route_updates():
     rclpy.init()
     node = RobotState()
     try:
@@ -207,65 +200,13 @@ def test_failure_and_manual_priority():
             LocalizationInitializationState(state=LocalizationInitializationState.INITIALIZED)
         )
         feed_sensors(node)
-        node.on_operation(OperationModeState(mode=OperationModeState.LOCAL))
-        assert node.status() == "ready"
-        node.on_manual_command(Twist())
-        assert node.status() == "manual"
         node.on_route_request(String(data="rejected"))
         assert node.status() == "failure"
         node.on_route(RouteState(state=RouteState.ABORTED))
         assert node.status() == "failure"
         node.on_route(RouteState(state=RouteState.SET))
         assert node.status() == "failure"
-        node.manual_command_at = time.monotonic() - node.manual_command_timeout_s - 1
         assert node.status() == "failure"
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
-
-
-def test_notready_manual_returns_to_notready_without_route_cancel():
-    rclpy.init()
-    node = RobotState()
-    try:
-        node.manual_route_cancel_pub = Mock()
-        node.on_operation(OperationModeState(mode=OperationModeState.LOCAL))
-        node.on_manual_command(Twist())
-        assert node.status() == "manual"
-        node.manual_route_cancel_pub.publish.assert_not_called()
-        node.manual_command_at = time.monotonic() - node.manual_command_timeout_s - 1
-        node.publish_status()
-        assert node.status() == "notready"
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
-
-
-def test_manual_from_active_route_requests_clear_once_and_returns_ready():
-    rclpy.init()
-    node = RobotState()
-    try:
-        node.manual_route_cancel_pub = Mock()
-        node.on_localization(
-            LocalizationInitializationState(state=LocalizationInitializationState.INITIALIZED)
-        )
-        feed_sensors(node)
-        node.on_route(RouteState(state=RouteState.SET))
-        node.on_operation(OperationModeState(
-            mode=OperationModeState.AUTONOMOUS, is_autoware_control_enabled=True
-        ))
-        assert node.status() == "navigate"
-        node.on_operation(OperationModeState(mode=OperationModeState.LOCAL))
-        node.on_manual_command(Twist())
-        assert node.status() == "manual"
-        assert node.manual_route_cancel_pub.publish.call_count == 1
-        assert node.manual_route_cancel_pub.publish.call_args.args[0].data == "ready"
-        node.on_manual_command(Twist())
-        assert node.manual_route_cancel_pub.publish.call_count == 1
-        node.on_route(RouteState(state=RouteState.UNSET))
-        node.manual_command_at = time.monotonic() - node.manual_command_timeout_s - 1
-        node.publish_status()
-        assert node.status() == "ready"
     finally:
         node.destroy_node()
         rclpy.shutdown()
@@ -354,7 +295,6 @@ def test_cancel_changes_failure_with_unset_route_to_ready():
         feed_sensors(node)
         node.on_route(RouteState(state=RouteState.UNSET))
         node.on_operation(OperationModeState(mode=OperationModeState.LOCAL))
-        node.on_manual_command(Twist())
         node.on_route_request(String(data="rejected"))
         assert node.status() == "failure"
 

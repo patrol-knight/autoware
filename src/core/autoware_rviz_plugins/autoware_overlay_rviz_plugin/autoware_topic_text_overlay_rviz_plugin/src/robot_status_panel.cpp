@@ -28,7 +28,7 @@ StatusStyle style_for(const std::string & status)
     return {"#bfc5c9", "Waiting for localization or sensors"};
   }
   if (status == "ready") {
-    return {"#23e344", "Ready for a goal"};
+    return {"#23e344", "Localization and sensors ready"};
   }
   if (status == "failure") {
     return {"#ff5555", "Route planning or route state failed"};
@@ -38,9 +38,6 @@ StatusStyle style_for(const std::string & status)
   }
   if (status == "reach") {
     return {"#65e84a", "Goal reached; vehicle stopped"};
-  }
-  if (status == "manual") {
-    return {"#ffd24d", "Joystick control active"};
   }
   return {"#bfc5c9", "Waiting for /autoware/robot_status"};
 }

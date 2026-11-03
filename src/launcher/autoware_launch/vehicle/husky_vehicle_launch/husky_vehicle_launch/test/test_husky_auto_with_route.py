@@ -2,6 +2,7 @@ import sys
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import Mock
 
 import rclpy
 from autoware_planning_msgs.msg import RouteState, Trajectory, TrajectoryPoint
@@ -92,6 +93,27 @@ class TestHuskyAutoWithRoute(unittest.TestCase):
 
         self.bridge.on_route_state(RouteState(state=RouteState.UNSET))
         self.assertFalse(self.bridge.cancelled)
+
+    def test_manual_takeover_requests_route_clear_once_per_route(self):
+        self.bridge.manual_route_cancel_pub = Mock()
+        self.set_route()
+        self.send_trajectory_and_tracking()
+        self.bridge._maybe_auto_enable()
+        self.assertTrue(self.bridge.gate.enabled)
+
+        self.bridge.on_manual(Twist(), "/husky/joy_teleop/cmd_vel")
+        self.assertFalse(self.bridge.gate.enabled)
+        self.bridge.on_manual(Twist(), "/husky/joy_teleop/cmd_vel")
+        self.assertEqual(self.bridge.manual_route_cancel_pub.publish.call_count, 1)
+        self.assertEqual(
+            self.bridge.manual_route_cancel_pub.publish.call_args.args[0].data,
+            "manual_takeover",
+        )
+
+        self.bridge.on_route_state(RouteState(state=RouteState.UNSET))
+        self.set_route()
+        self.bridge.on_manual(Twist(), "/husky/joy_teleop/cmd_vel")
+        self.assertEqual(self.bridge.manual_route_cancel_pub.publish.call_count, 2)
 
     def test_invalid_trajectory_and_manual_takeover_do_not_enable(self):
         self.set_route()
