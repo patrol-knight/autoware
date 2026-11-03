@@ -59,8 +59,12 @@ value, and heading rate at most `stop_angular_tolerance_radps` (default 0.01 rad
 `velocity_timeout_s` defaults to 1 second. Missing, stale, or non-finite velocity
 does not produce `reach`.
 
-Sensor liveness uses the receipt time of `/sensing/lidar/concatenated/pointcloud`
-(`sensor_msgs/msg/PointCloud2`), `/sensing/imu/imu_data` (`sensor_msgs/msg/Imu`),
+Sensor liveness uses the receipt time of `/sensing/lidar/obstacle_stop`
+(`std_msgs/msg/Bool`), `/sensing/imu/imu_data` (`sensor_msgs/msg/Imu`),
 and `/husky/platform/odom/filtered` (`nav_msgs/msg/Odometry`). All three must
 arrive within `sensor_timeout_s` (default 2 seconds); the three topic names are
 configurable with `lidar_topic`, `imu_topic`, and `wheel_odometry_topic`.
+The LiDAR obstacle detector publishes a Bool for each successfully processed scan;
+its value indicates whether an obstacle stop is needed, while message arrival
+indicates that processed LiDAR data is current. The status node does not receive
+the full point cloud.

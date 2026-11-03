@@ -7,14 +7,14 @@ from autoware_planning_msgs.msg import RouteState
 from autoware_vehicle_msgs.msg import VelocityReport
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import Imu, PointCloud2
-from std_msgs.msg import Header, String
+from sensor_msgs.msg import Imu
+from std_msgs.msg import Bool, Header, String
 
 from robot_state.node import REACH_DELIVERY_S, RobotState
 
 
 def feed_sensors(node):
-    node.on_sensor("lidar", PointCloud2())
+    node.on_sensor("lidar", Bool())
     node.on_sensor("imu", Imu())
     node.on_sensor("wheel_odometry", Odometry())
 
@@ -300,7 +300,7 @@ def test_each_missing_or_stale_sensor_reports_notready():
         )
         assert node.status() == "notready"
         for name, message in (
-            ("lidar", PointCloud2()),
+            ("lidar", Bool()),
             ("imu", Imu()),
             ("wheel_odometry", Odometry()),
         ):

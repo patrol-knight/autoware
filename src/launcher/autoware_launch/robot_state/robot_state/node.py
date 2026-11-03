@@ -13,8 +13,8 @@ from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from rclpy.time import Time
-from sensor_msgs.msg import Imu, PointCloud2
-from std_msgs.msg import Header, String
+from sensor_msgs.msg import Imu
+from std_msgs.msg import Bool, Header, String
 
 REACH_DELIVERY_S = 0.2
 
@@ -27,7 +27,7 @@ class RobotState(Node):
         self.declare_parameter("velocity_timeout_s", 1.0)
         self.declare_parameter("stop_linear_tolerance_mps", 0.01)
         self.declare_parameter("stop_angular_tolerance_radps", 0.01)
-        self.declare_parameter("lidar_topic", "/sensing/lidar/concatenated/pointcloud")
+        self.declare_parameter("lidar_topic", "/sensing/lidar/obstacle_stop")
         self.declare_parameter("imu_topic", "/sensing/imu/imu_data")
         self.declare_parameter("wheel_odometry_topic", "/husky/platform/odom/filtered")
         self.manual_command_timeout_s = float(
@@ -81,7 +81,7 @@ class RobotState(Node):
             VelocityReport, "/vehicle/status/velocity_status", self.on_velocity, 10,
         )
         for name, message_type, parameter in (
-            ("lidar", PointCloud2, "lidar_topic"),
+            ("lidar", Bool, "lidar_topic"),
             ("imu", Imu, "imu_topic"),
             ("wheel_odometry", Odometry, "wheel_odometry_topic"),
         ):
