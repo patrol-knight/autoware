@@ -10,8 +10,8 @@ single arrival event and is not repeated at 5 Hz.
 
 | Value | Meaning |
 | --- | --- |
-| `notready` | Localization has not reported `INITIALIZED`, or LiDAR, IMU, or wheel odometry messages are missing or stale. |
-| `ready` | Localization is initialized, sensors are current, and autonomous navigation is not active. |
+| `notready` | Initial readiness is pending: localization has not reported `INITIALIZED`, or LiDAR, IMU, or wheel odometry messages are missing or stale. |
+| `ready` | Initial readiness has been established and autonomous navigation is not active. |
 | `failure` | Planning could not find a valid route for the RViz goal; the adaptor retries from the current localization pose once per second. An aborted route also reports failure. |
 | `navigate` | An assigned route is active and autonomous control is enabled. |
 | `reach` | The route entered `ARRIVED` and fresh vehicle velocity confirms a stop; published once per arrival, then replaced by `ready` after a short delivery interval. |
@@ -36,7 +36,7 @@ interface immediately disables autonomous output and sends a zero Twist; the fol
 discards its trajectory. The planning adaptor clears `/planning/clear_route`, retrying
 if the service is unavailable or fails, including when a failed goal has already left
 the route state at `UNSET`. It also abandons any failed-goal recovery. The
-status becomes `ready` while localization and sensors remain healthy. A new route can
+status becomes `ready` once initial readiness has been established. A new route can
 start after the route state becomes `UNSET`.
 
 On a successful retry, the adaptor calls `/planning/clear_route` to delete the recovered route, restores
@@ -60,7 +60,9 @@ does not produce `reach`.
 Sensor liveness uses the receipt time of `/sensing/lidar/obstacle_stop`
 (`std_msgs/msg/Bool`), `/sensing/imu/imu_data` (`sensor_msgs/msg/Imu`),
 and `/husky/platform/odom` (`nav_msgs/msg/Odometry`). All three must
-arrive within `sensor_timeout_s` (default 2 seconds); the three topic names are
+arrive within `sensor_timeout_s` (default 5 seconds) to establish initial readiness.
+After that, localization changes and sensor timeouts do not return the status to
+`notready`. The three topic names are
 configurable with `lidar_topic`, `imu_topic`, and `wheel_odometry_topic`.
 The LiDAR obstacle detector publishes a Bool for each successfully processed scan;
 its value indicates whether an obstacle stop is needed, while message arrival

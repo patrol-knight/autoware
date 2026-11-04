@@ -20,6 +20,7 @@
   <arg name="launch_map" default="true" description="launch map"/>
   <arg name="launch_sensing" default="true" description="launch sensing"/>
   <arg name="launch_sensing_driver" default="true" description="launch sensing driver"/>
+  <arg name="launch_distortion_corrector" default="true" description="correct Husky LiDAR motion distortion"/>
   <arg name="launch_localization" default="true" description="launch localization"/>
   <arg name="localization_gnss_enabled" default="true" description="allow automatic GNSS pose initialization"/>
   <arg name="launch_perception" default="true" description="launch perception"/>
@@ -104,6 +105,7 @@
       <arg name="pointcloud_container_name" value="$(var pointcloud_container_name)"/>
       <arg name="launch_pointcloud_container" value="false"/>
       <arg name="launch_sensing_driver" value="$(var launch_sensing_driver)"/>
+      <arg name="launch_distortion_corrector" value="$(var launch_distortion_corrector)"/>
       <arg name="sensor_model" value="$(var sensor_model)"/>
       <arg name="vehicle_model" value="$(var vehicle_model)"/>
       <arg name="use_sim_time" value="$(var use_sim_time)"/>

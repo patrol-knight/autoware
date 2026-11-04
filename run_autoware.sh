@@ -73,6 +73,7 @@ exec ros2 launch autoware_launch autoware.launch.xml \
   launch_map:=true \
   launch_sensing:=true \
   launch_sensing_driver:=true \
+  launch_distortion_corrector:=false \
   launch_localization:=true \
   localization_gnss_enabled:=true \
   launch_perception:=false \

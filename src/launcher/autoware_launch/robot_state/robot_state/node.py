@@ -21,7 +21,7 @@ REACH_DELIVERY_S = 0.2
 class RobotState(Node):
     def __init__(self):
         super().__init__("robot_state")
-        self.declare_parameter("sensor_timeout_s", 2.0)
+        self.declare_parameter("sensor_timeout_s", 5.0)
         self.declare_parameter("velocity_timeout_s", 1.0)
         self.declare_parameter("stop_linear_tolerance_mps", 0.01)
         self.declare_parameter("stop_angular_tolerance_radps", 0.01)
@@ -52,6 +52,7 @@ class RobotState(Node):
         self.velocity_report = None
         self.velocity_seen_at = None
         self.sensor_last_seen = {"lidar": None, "imu": None, "wheel_odometry": None}
+        self.readiness_established = False
         self.last_status = None
         qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.publisher = self.create_publisher(String, "/autoware/robot_status", qos)
@@ -172,20 +173,15 @@ class RobotState(Node):
         if self.failed:
             return "failure"
         now = time.monotonic()
-        if self.cancelled:
+        if not self.readiness_established:
             if self.localization != LocalizationInitializationState.INITIALIZED or any(
                 seen is None or now - seen > self.sensor_timeout_s
                 for seen in self.sensor_last_seen.values()
             ):
                 return "notready"
+            self.readiness_established = True
+        if self.cancelled:
             return "ready"
-        if self.localization != LocalizationInitializationState.INITIALIZED:
-            return "notready"
-        if any(
-            seen is None or now - seen > self.sensor_timeout_s
-            for seen in self.sensor_last_seen.values()
-        ):
-            return "notready"
         if self.route == RouteState.ARRIVED:
             if not self.reach_published_for_arrival and self.vehicle_stopped(now):
                 return "reach"

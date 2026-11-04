@@ -2,6 +2,7 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.actions import Node
@@ -33,6 +34,7 @@ def generate_launch_description():
     ]
 
     return LaunchDescription([
+        DeclareLaunchArgument("launch_distortion_corrector", default_value="true"),
         DeclareLaunchArgument(
             "lidar_input_rate_param_file",
             default_value=PathJoinSubstitution([
@@ -48,12 +50,29 @@ def generate_launch_description():
             ]),
         ),
         ComposableNodeContainer(
+            condition=IfCondition(LaunchConfiguration("launch_distortion_corrector")),
             name="husky_lidar_preprocessor",
             namespace="/sensing/lidar/top",
             package="rclcpp_components",
             executable="component_container_mt",
             composable_node_descriptions=components,
             output="screen",
+        ),
+        Node(
+            package="husky_sensor_kit_launch",
+            executable="pointcloud_bridge.py",
+            name="husky_pointcloud_bridge",
+            condition=IfCondition(LaunchConfiguration("launch_distortion_corrector")),
+        ),
+        Node(
+            package="husky_sensor_kit_launch",
+            executable="pointcloud_bridge.py",
+            name="husky_pointcloud_bridge",
+            condition=UnlessCondition(LaunchConfiguration("launch_distortion_corrector")),
+            parameters=[
+                LaunchConfiguration("lidar_input_rate_param_file"),
+                {"publish_concatenated": True},
+            ],
         ),
         Node(
             package="husky_sensor_kit_launch",

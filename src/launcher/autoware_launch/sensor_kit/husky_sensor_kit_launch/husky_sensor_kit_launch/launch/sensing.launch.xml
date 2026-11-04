@@ -4,6 +4,7 @@
   <arg name="vlp16_config_file" default="$(find-pkg-share husky_sensor_kit_launch)/config/VLP16.param.yaml"/>
   <arg name="fixposition_config" default="config.yaml"/>
   <arg name="launch_gnss_poser" default="true"/>
+  <arg name="launch_distortion_corrector" default="true"/>
   <arg name="vehicle_mirror_param_file" default=""/>
   <arg name="pointcloud_container_name" default="pointcloud_container"/>
 
@@ -22,9 +23,9 @@
   </group>
 
   <!-- Adapt the observed hardware topics to Autoware's sensing inputs. -->
-  <node pkg="husky_sensor_kit_launch" exec="pointcloud_bridge.py"
-        name="husky_pointcloud_bridge"/>
-  <include file="$(find-pkg-share husky_sensor_kit_launch)/launch/lidar_processing.launch.py"/>
+  <include file="$(find-pkg-share husky_sensor_kit_launch)/launch/lidar_processing.launch.py">
+    <arg name="launch_distortion_corrector" value="$(var launch_distortion_corrector)"/>
+  </include>
   <node pkg="husky_sensor_kit_launch" exec="corrimu_bridge.py"
         name="fixposition_corrimu_bridge"/>
   <node pkg="husky_sensor_kit_launch" exec="gnss_fix_bridge.py"
@@ -34,12 +35,6 @@
         name="husky_odom_twist_bridge"/>
 
   <group if="$(var launch_gnss_poser)">
-    <include file="$(find-pkg-share autoware_gnss_poser)/launch/gnss_poser.launch.xml">
-      <arg name="param_file" value="$(find-pkg-share husky_sensor_kit_launch)/config/gnss_poser.param.yaml"/>
-      <arg name="input_topic_fix" value="/sensing/gnss/fix"/>
-      <arg name="output_topic_gnss_pose" value="/sensing/gnss/pose"/>
-      <arg name="output_topic_gnss_pose_cov" value="/sensing/gnss/pose_with_covariance"/>
-      <arg name="output_topic_gnss_fixed" value="/sensing/gnss/fixed"/>
-    </include>
+    <include file="$(find-pkg-share husky_sensor_kit_launch)/launch/gnss_poser_until_initialized.launch.py"/>
   </group>
 </launch>

@@ -232,7 +232,7 @@ def test_failure_survives_retry_route_until_recovery_event():
         rclpy.shutdown()
 
 
-def test_each_missing_or_stale_sensor_reports_notready():
+def test_sensors_gate_initial_readiness_but_do_not_revoke_it():
     rclpy.init()
     node = RobotState()
     try:
@@ -253,9 +253,28 @@ def test_each_missing_or_stale_sensor_reports_notready():
         for name in node.sensor_last_seen:
             node.sensor_last_seen[name] = time.monotonic() - node.sensor_timeout_s - 1
             node.publish_status()
-            assert node.status() == "notready"
+            assert node.status() == "ready"
             feed_sensors(node)
             assert node.status() == "ready"
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_localization_reset_does_not_revoke_readiness():
+    rclpy.init()
+    node = RobotState()
+    try:
+        node.on_localization(
+            LocalizationInitializationState(state=LocalizationInitializationState.INITIALIZED)
+        )
+        feed_sensors(node)
+        assert node.status() == "ready"
+
+        node.on_localization(
+            LocalizationInitializationState(state=LocalizationInitializationState.UNINITIALIZED)
+        )
+        assert node.status() == "ready"
     finally:
         node.destroy_node()
         rclpy.shutdown()

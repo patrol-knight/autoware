@@ -43,13 +43,16 @@ integration is still needed before planning or control uses Husky geometry.
 
 ## Current data paths
 
-- `/velodyne_points` feeds `distortion_corrector_node` directly, which publishes
-  `/sensing/lidar/concatenated/pointcloud`. The ring outlier filter is bypassed;
-  `/sensing/lidar/top/rectified/pointcloud_ex` is no longer published.
-  The corrector accepts at most `lidar_input_rate` clouds per second (default
-  5 Hz from `autoware_launch/config/sensing/lidar_input_rate.param.yaml`), so
-  its output rate follows the accepted input rate when the sensor supplies at
-  least 5 Hz. A slower sensor produces a slower output.
+- With `launch_distortion_corrector:=true`, `/velodyne_points` feeds
+  `distortion_corrector_node`, which publishes
+  `/sensing/lidar/concatenated/pointcloud` using the existing IMU and twist
+  inputs. With the default `launch_distortion_corrector:=false`, the corrector
+  is not started; the pointcloud bridge forwards unchanged clouds to that
+  output topic without subscribing to IMU or twist. Both paths accept at most
+  `lidar_input_rate` clouds per second (currently 2 Hz in
+  `autoware_launch/config/sensing/lidar_input_rate.param.yaml`). A slower sensor
+  produces a slower output. The ring outlier filter is bypassed;
+  `/sensing/lidar/top/rectified/pointcloud_ex` is not published.
   The best-effort `/sensing/lidar/top/pointcloud_raw_ex` copy is available
   for monitoring and recording; it is not an input to distortion correction.
 - `/fixposition/fpa/corrimu` (`fixposition_driver_msgs/FpaImu`) to
@@ -132,8 +135,11 @@ container. The VLP-16 and Fixposition drivers and GNSS poser are enabled;
 perception is off. The GNSS poser uses `/map/map_projector_info` from the map
 loader and publishes `/sensing/gnss/pose_with_covariance` for automatic pose
 initialization when `localization_gnss_enabled:=true`. With
-`localization_gnss_enabled:=false`, the GNSS poser still runs, but localization
-does not use its output for initialization. RViz opens the Husky planning view.
+`localization_gnss_enabled:=false`, the GNSS poser still starts, but localization
+does not use its output for initialization. The Husky sensing launch stops the
+GNSS poser when `/localization/initialization_state` becomes `INITIALIZED`.
+If localization is reset later, restart the launch to make GNSS pose available
+again. RViz opens the Husky planning view.
 Do not run `bring_up.sh` at the same time: it starts the same VLP-16 and
 Fixposition drivers.
 
