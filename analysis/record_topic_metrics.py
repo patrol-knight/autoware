@@ -16,7 +16,7 @@ from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import PointCloud2
-from std_msgs.msg import Bool, String
+from std_msgs.msg import Bool
 
 
 TOPICS = (
@@ -27,7 +27,6 @@ TOPICS = (
     ("/control/husky/cmd_vel", Twist),
     ("/husky/cmd_vel", Twist),
     ("/sensing/lidar/obstacle_stop", Bool),
-    ("/autoware/robot_status", String),
 )
 FIELDS = (
     "received_utc", "elapsed_s", "topic", "message_type", "sequence",

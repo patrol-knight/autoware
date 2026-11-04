@@ -52,5 +52,4 @@ ros2 bag record \
   /tf_static \
   /diagnostics \
   /cpu_monitor/cpu_usage \
-  /mem_monitor/memory_status \
-  /autoware/robot_status
+  /mem_monitor/memory_status

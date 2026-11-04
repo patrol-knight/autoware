@@ -81,7 +81,6 @@ exec ros2 launch autoware_launch autoware.launch.xml \
   planning_module_preset:=husky_no_perception \
   control_module_preset:=husky_no_perception \
   launch_planning_test_adaptors:=true \
-  launch_robot_state:=true \
   enable_auto_with_route:=true \
   launch_control:=true \
   launch_api:=false \
