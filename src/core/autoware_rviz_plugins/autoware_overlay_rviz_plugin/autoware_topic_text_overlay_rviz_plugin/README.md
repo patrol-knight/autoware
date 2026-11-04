@@ -39,22 +39,3 @@ For `Marker` and `MarkerArray`, only markers with `TEXT_VIEW_FACING` type are di
 
 The overlay position, font size, maximum displayed text length, selected topics, and selected marker
 namespaces are stored in the RViz config.
-
-## Husky robot status panel
-
-`RobotStatusPanel` is a compact dockable panel for `/autoware/robot_status` (`std_msgs/msg/String`).
-It shows the current status in a centered color bar with a short description, following
-the row layout of the Autoware state panel. Colors distinguish `notready`, `ready`,
-`failure`, `navigate`, and `reach`. It uses transient-local QoS to show the
-latest status when RViz starts after the status publisher. The Husky planning RViz
-configuration enables this panel instead of a text overlay.
-
-## Husky robot mode panel
-
-`RobotModePanel` subscribes to `/robot_mode` (`std_msgs/msg/String`) with reliable,
-transient-local QoS and depth 1. The Husky planning RViz configuration places it
-beside the robot status panel. It shows `none` in gray, `manual` in yellow, and
-`auto` in cyan.
-An unrecognized value appears in gray; the panel shows `WAITING` until it
-receives a message. A late RViz subscriber receives the mode publisher's latest
-retained value.
