@@ -20,6 +20,7 @@
   <arg name="launch_map" default="true" description="launch map"/>
   <arg name="launch_sensing" default="true" description="launch sensing"/>
   <arg name="launch_sensing_driver" default="true" description="launch sensing driver"/>
+  <arg name="launch_fixposition_driver" default="true" description="launch the Husky Fixposition driver and use its IMU for gyro odometer"/>
   <arg name="launch_distortion_corrector" default="true" description="correct Husky LiDAR motion distortion"/>
   <arg name="launch_localization" default="true" description="launch localization"/>
   <arg name="localization_gnss_enabled" default="true" description="allow automatic GNSS pose initialization"/>

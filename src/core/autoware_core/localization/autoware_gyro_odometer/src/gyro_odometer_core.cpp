@@ -31,6 +31,7 @@ GyroOdometerNode::GyroOdometerNode(const rclcpp::NodeOptions & node_options)
 : Node("gyro_odometer", node_options),
   output_frame_(declare_parameter<std::string>("output_frame")),
   message_timeout_sec_(declare_parameter<double>("message_timeout_sec")),
+  use_imu_(declare_parameter<bool>("use_imu", true)),
   vehicle_twist_arrived_(false),
   imu_arrived_(false)
 {
@@ -41,9 +42,11 @@ GyroOdometerNode::GyroOdometerNode(const rclcpp::NodeOptions & node_options)
     "vehicle/twist_with_covariance", rclcpp::QoS{10},
     std::bind(&GyroOdometerNode::callback_vehicle_twist, this, std::placeholders::_1));
 
-  imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
-    "imu", rclcpp::QoS{10},
-    std::bind(&GyroOdometerNode::callback_imu, this, std::placeholders::_1));
+  if (use_imu_) {
+    imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
+      "imu", rclcpp::QoS{10},
+      std::bind(&GyroOdometerNode::callback_imu, this, std::placeholders::_1));
+  }
 
   twist_raw_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>("twist_raw", rclcpp::QoS{10});
   twist_with_covariance_raw_pub_ = create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>(
@@ -86,7 +89,7 @@ void GyroOdometerNode::concat_gyro_and_odometer()
     gyro_queue_.clear();
     return;
   }
-  if (!imu_arrived_) {
+  if (use_imu_ && !imu_arrived_) {
     vehicle_twist_queue_.clear();
     gyro_queue_.clear();
     return;
@@ -94,13 +97,15 @@ void GyroOdometerNode::concat_gyro_and_odometer()
 
   // check timeout
   latest_vehicle_twist_dt_ = std::abs((this->now() - latest_vehicle_twist_ros_time_).seconds());
-  latest_imu_dt_ = std::abs((this->now() - latest_imu_ros_time_).seconds());
+  if (use_imu_) {
+    latest_imu_dt_ = std::abs((this->now() - latest_imu_ros_time_).seconds());
+  }
   if (latest_vehicle_twist_dt_ > message_timeout_sec_) {
     vehicle_twist_queue_.clear();
     gyro_queue_.clear();
     return;
   }
-  if (latest_imu_dt_ > message_timeout_sec_) {
+  if (use_imu_ && latest_imu_dt_ > message_timeout_sec_) {
     vehicle_twist_queue_.clear();
     gyro_queue_.clear();
     return;
@@ -113,8 +118,14 @@ void GyroOdometerNode::concat_gyro_and_odometer()
     // not output error and clear queue
     return;
   }
-  if (gyro_queue_.empty()) {
+  if (use_imu_ && gyro_queue_.empty()) {
     // not output error and clear queue
+    return;
+  }
+
+  if (!use_imu_) {
+    publish_data(fuse_twist(vehicle_twist_queue_, gyro_queue_));
+    vehicle_twist_queue_.clear();
     return;
   }
 
@@ -191,6 +202,7 @@ void GyroOdometerNode::publish_diagnostics()
   diagnostics_->add_key_value("latest_imu_time_stamp", imu_time);
   diagnostics_->add_key_value("is_arrived_first_vehicle_twist", vehicle_twist_arrived_);
   diagnostics_->add_key_value("is_arrived_first_imu", imu_arrived_);
+  diagnostics_->add_key_value("use_imu", use_imu_);
   diagnostics_->add_key_value("vehicle_twist_time_stamp_dt", latest_vehicle_twist_dt_);
   diagnostics_->add_key_value("imu_time_stamp_dt", latest_imu_dt_);
   diagnostics_->add_key_value("vehicle_twist_queue_size", latest_vehicle_twist_queue_size_);
@@ -199,10 +211,10 @@ void GyroOdometerNode::publish_diagnostics()
 
   DiagnosticsState state;
   state.vehicle_twist_arrived = vehicle_twist_arrived_;
-  state.imu_arrived = imu_arrived_;
-  state.is_succeed_transform_imu = is_succeed_transform_imu_;
+  state.imu_arrived = !use_imu_ || imu_arrived_;
+  state.is_succeed_transform_imu = !use_imu_ || is_succeed_transform_imu_;
   state.latest_vehicle_twist_dt = latest_vehicle_twist_dt_;
-  state.latest_imu_dt = latest_imu_dt_;
+  state.latest_imu_dt = use_imu_ ? latest_imu_dt_ : 0.0;
   state.message_timeout_sec = message_timeout_sec_;
   state.output_frame = output_frame_;
 

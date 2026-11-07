@@ -2,13 +2,15 @@
 
 ## Overview
 
-`autoware_gyro_odometer` is the package to estimate twist by combining imu and vehicle speed.
+`autoware_gyro_odometer` estimates twist from vehicle speed, optionally replacing the vehicle angular velocity with IMU measurements.
 
 ## Design
 
 `autoware_gyro_odometer` is part of the perception or localization stack, providing reliable motion estimates for navigation and control. It is designed to estimate the robot's motion by combining vehicle twist data (linear and angular velocities) with angular velocity measurements from an IMU (Inertial Measurement Unit).
 
 **Data Handling and Synchronization:**
+
+- Set `use_imu: false` to publish from vehicle twist alone, including its angular velocity. With `use_imu: true` (the default), the IMU replaces all three angular velocity components.
 
 - Message Queues: Uses queues to store vehicle twist and gyro messages to ensure data synchronization.
 - Message Timeouts: Checks for message timeouts to discard stale data, preventing incorrect estimations.

@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="launch_driver" default="false"/>
+  <arg name="launch_fixposition_driver" default="$(env HUSKY_LAUNCH_FIXPOSITION_DRIVER true)"/>
   <arg name="vlp16_config_file" default="$(find-pkg-share husky_sensor_kit_launch)/config/VLP16.param.yaml"/>
   <arg name="fixposition_config" default="config.yaml"/>
   <arg name="launch_gnss_poser" default="true"/>
@@ -16,10 +17,15 @@
       <arg name="sensor_model" value="VLP16"/>
       <arg name="config_file" value="$(var vlp16_config_file)"/>
     </include>
-    <include file="$(find-pkg-share fixposition_driver_ros2)/launch/node.launch">
-      <arg name="config" value="$(var fixposition_config)"/>
-      <arg name="publish_poi_vrtk_tf" value="false"/>
-    </include>
+  </group>
+  <group if="$(var launch_driver)">
+    <group if="$(var launch_fixposition_driver)">
+      <push-ros-namespace namespace="/"/>
+      <include file="$(find-pkg-share fixposition_driver_ros2)/launch/node.launch">
+        <arg name="config" value="$(var fixposition_config)"/>
+        <arg name="publish_poi_vrtk_tf" value="false"/>
+      </include>
+    </group>
   </group>
 
   <!-- Adapt the observed hardware topics to Autoware's sensing inputs. -->
@@ -27,7 +33,7 @@
     <arg name="launch_distortion_corrector" value="$(var launch_distortion_corrector)"/>
   </include>
   <node pkg="husky_sensor_kit_launch" exec="corrimu_bridge.py"
-        name="fixposition_corrimu_bridge"/>
+        name="fixposition_corrimu_bridge" if="$(var launch_fixposition_driver)"/>
   <node pkg="husky_sensor_kit_launch" exec="gnss_fix_bridge.py"
         name="fixposition_gnss_fix_bridge"/>
 

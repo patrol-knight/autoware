@@ -60,6 +60,29 @@ geometry_msgs::msg::TwistWithCovarianceStamped fuse_twist(
   vx_mean /= static_cast<double>(vehicle_twist_queue.size());
   vx_covariance_original /= static_cast<double>(vehicle_twist_queue.size());
 
+  if (gyro_queue.empty()) {
+    // Without IMU, retain the wheel odometry angular velocity (especially yaw rate).
+    geometry_msgs::msg::TwistWithCovarianceStamped twist_with_cov;
+    twist_with_cov.header = vehicle_twist_queue.back().header;
+    twist_with_cov.twist.twist.linear.x = vx_mean;
+    for (const auto & vehicle_twist : vehicle_twist_queue) {
+      twist_with_cov.twist.twist.angular.x += vehicle_twist.twist.twist.angular.x;
+      twist_with_cov.twist.twist.angular.y += vehicle_twist.twist.twist.angular.y;
+      twist_with_cov.twist.twist.angular.z += vehicle_twist.twist.twist.angular.z;
+    }
+    const double count = static_cast<double>(vehicle_twist_queue.size());
+    twist_with_cov.twist.twist.angular.x /= count;
+    twist_with_cov.twist.twist.angular.y /= count;
+    twist_with_cov.twist.twist.angular.z /= count;
+    twist_with_cov.twist.covariance[COV_IDX_XYZRPY::X_X] = 0.0025;
+    twist_with_cov.twist.covariance[COV_IDX_XYZRPY::Y_Y] = 100000.0;
+    twist_with_cov.twist.covariance[COV_IDX_XYZRPY::Z_Z] = 100000.0;
+    twist_with_cov.twist.covariance[COV_IDX_XYZRPY::ROLL_ROLL] = 100000.0;
+    twist_with_cov.twist.covariance[COV_IDX_XYZRPY::PITCH_PITCH] = 100000.0;
+    twist_with_cov.twist.covariance[COV_IDX_XYZRPY::YAW_YAW] = 0.0004;
+    return twist_with_cov;
+  }
+
   for (const auto & gyro : gyro_queue) {
     gyro_mean.x += gyro.angular_velocity.x;
     gyro_mean.y += gyro.angular_velocity.y;

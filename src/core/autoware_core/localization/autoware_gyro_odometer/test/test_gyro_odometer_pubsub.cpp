@@ -110,6 +110,9 @@ TEST(GyroOdometer, TestGyroOdometerWithImuAndVelocity)
 {
   Imu input_imu = generate_sample_imu();
   TwistWithCovarianceStamped input_velocity = generate_sample_velocity();
+  input_velocity.twist.twist.angular.x = -0.4;
+  input_velocity.twist.twist.angular.y = -0.5;
+  input_velocity.twist.twist.angular.z = -0.6;
 
   TwistWithCovarianceStamped expected_output_twist;
   expected_output_twist.twist.twist.linear.x = input_velocity.twist.twist.linear.x;
@@ -161,4 +164,24 @@ TEST(GyroOdometer, TestGyroOdometerImuOnly)
   wait_spin_some(gyro_odometer_validator_node);
 
   EXPECT_TRUE(gyro_odometer_validator_node->received_latest_twist_ptr == nullptr);
+}
+
+TEST(GyroOdometer, TestVehicleAngularVelocityWithoutImu)
+{
+  auto options = get_node_options_with_default_params();
+  options.append_parameter_override("use_imu", false);
+  auto gyro_odometer_node =
+    std::make_shared<autoware::gyro_odometer::GyroOdometerNode>(options);
+  auto velocity_generator = std::make_shared<VelocityGenerator>();
+  auto validator = std::make_shared<GyroOdometerValidator>();
+
+  auto velocity = generate_sample_velocity();
+  velocity.twist.twist.angular.z = 0.42;
+  velocity_generator->vehicle_velocity_pub->publish(velocity);
+  wait_spin_some(gyro_odometer_node);
+  wait_spin_some(validator);
+
+  ASSERT_NE(validator->received_latest_twist_ptr, nullptr);
+  EXPECT_DOUBLE_EQ(validator->received_latest_twist_ptr->twist.twist.angular.z, 0.42);
+  EXPECT_DOUBLE_EQ(validator->received_latest_twist_ptr->twist.twist.linear.x, 1.0);
 }

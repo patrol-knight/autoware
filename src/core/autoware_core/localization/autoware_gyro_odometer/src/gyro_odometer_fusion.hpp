@@ -35,12 +35,12 @@ namespace autoware::gyro_odometer
 std::array<double, 9> transform_covariance(const std::array<double, 9> & cov);
 
 /// \brief Fuse the vehicle-twist queue and the (already gyro-frame-transformed) IMU queue into a
-/// single twist with covariance.
+/// single twist with covariance. If the IMU queue is empty, use the vehicle angular velocity.
 ///
 /// Computes the per-queue means and the statistically reduced covariances, and selects the output
 /// header stamp as the later of the latest vehicle-twist and latest IMU stamps. The IMU queue must
 /// already be transformed into the output frame (its covariances reduced via transform_covariance).
-/// Both queues must be non-empty; emptiness is the caller's responsibility to check.
+/// The vehicle queue must be non-empty; emptiness is the caller's responsibility to check.
 ///
 /// Pure function: it reads the queues and produces an output message without touching any node
 /// state, the clock, TF, or publishers.

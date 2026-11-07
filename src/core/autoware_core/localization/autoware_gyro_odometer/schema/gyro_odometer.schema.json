@@ -15,9 +15,14 @@
           "type": "number",
           "description": "delay tolerance time for message",
           "default": 0.2
+        },
+        "use_imu": {
+          "type": "boolean",
+          "description": "use IMU angular velocity instead of vehicle angular velocity",
+          "default": true
         }
       },
-      "required": ["output_frame", "message_timeout_sec"],
+      "required": ["output_frame", "message_timeout_sec", "use_imu"],
       "additionalProperties": false
     }
   },

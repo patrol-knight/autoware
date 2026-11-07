@@ -60,6 +60,13 @@ integration is still needed before planning or control uses Husky geometry.
 - `/fixposition/gnss1` through a QoS bridge and `autoware_gnss_poser` to GNSS pose.
 - `/husky/platform/odom` to Autoware twist input.
 
+`run_autoware.sh` sets `launch_fixposition_driver:=true` by default. Pass
+`launch_fixposition_driver:=false` to keep the VLP-16 driver running without
+starting Fixposition. In that mode, gyro odometer uses the angular velocity
+from `/husky/platform/odom` directly. With Fixposition enabled, it replaces
+all three angular velocity components with the IMU measurements. Fixposition
+GNSS measurements are unavailable unless another publisher provides them.
+
 ### LiDAR obstacle stop
 
 The Husky LiDAR processing launch reads the distortion corrector's

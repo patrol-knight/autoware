@@ -10,6 +10,7 @@
   <arg name="output_twist_with_covariance_topic" default="gyro_twist_with_covariance" description="output twist with covariance topic name"/>
 
   <arg name="config_file" default="$(find-pkg-share autoware_gyro_odometer)/config/gyro_odometer.param.yaml"/>
+  <arg name="use_imu" default="$(env HUSKY_LAUNCH_FIXPOSITION_DRIVER true)"/>
 
   <node pkg="autoware_gyro_odometer" exec="autoware_gyro_odometer_node" output="both">
     <remap from="vehicle/twist_with_covariance" to="$(var input_vehicle_twist_with_covariance_topic)"/>
@@ -23,5 +24,6 @@
     <remap from="twist_with_covariance" to="$(var output_twist_with_covariance_topic)"/>
 
     <param from="$(var config_file)"/>
+    <param name="use_imu" value="$(var use_imu)"/>
   </node>
 </launch>
